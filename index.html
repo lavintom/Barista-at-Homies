@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Dial-In Studio" />
+  <meta name="theme-color" content="#f7f6f3" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="180x180" href="apple-touch-icon.png" />
+  <title>Dial-In Studio</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --fellow-bg: #f7f6f3;
+      --fellow-card: #ffffff;
+      --fellow-ink: #141414;
+      --fellow-muted: #6e6c67;
+      --fellow-border: #e6e4de;
+      --fellow-green: #167956;
+      --fellow-blue: #1e5ed6;
+      --fellow-brass: #b36a35;
+    }
+    html, body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      background-color: var(--fellow-bg);
+      color: var(--fellow-ink);
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+      overscroll-behavior-y: none;
+    }
+    /* Prevent iOS Safari auto-zoom on focus (requires >=16px font-size) */
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+    button, a {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+    .fellow-card {
+      background: var(--fellow-card);
+      border: 1px solid var(--fellow-border);
+      border-radius: 1.35rem;
+    }
+    .fellow-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.11em;
+      text-transform: uppercase;
+      color: var(--fellow-muted);
+    }
+    input[type="range"].accent-green { accent-color: #167956; }
+    input[type="range"].accent-blue { accent-color: #1e5ed6; }
+    .stepper-btn {
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      line-height: 1;
+      transition: all 0.14s ease;
+      user-select: none;
+    }
+    .stepper-btn:active {
+      transform: scale(0.92);
+    }
+    .ios-safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .ios-safe-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 10px);
+    }
+    .delta-badge {
+      animation: popIn 0.18s ease-out;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.88); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .toast-enter {
+      animation: slideUp 0.22s ease-out;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    /* Custom minimalist scrollbars */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="min-h-screen pb-24 sm:pb-10">
+  <!-- Minimalist Fellow-Style Frosted Header -->
+  <header class="sticky top-0 z-30 bg-[#f7f6f3]/90 backdrop-blur-md border-b border-[#e6e4de] ios-safe-top">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-full bg-[#141414] text-white flex items-center justify-center shadow-xs">
+          <i data-lucide="coffee" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <h1 class="text-[15px] font-semibold tracking-tight text-[#141414] leading-tight">Dial-In Studio</h1>
+          <p class="text-[11px] text-[#6e6c67] leading-tight">Aiden • Ode Gen 2 • Meraki Gen 2</p>
+        </div>
+      </div>
+
+      <!-- Desktop Segmented Control -->
+      <nav class="hidden sm:inline-flex bg-[#ebe9e3] p-1 rounded-full" aria-label="Machine Mode">
+        <button id="nav-drip" type="button" class="px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5">
+          <i data-lucide="droplets" class="w-3.5 h-3.5"></i>
+          <span>Fellow Aiden</span>
+        </button>
+        <button id="nav-espresso" type="button" class="px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5">
+          <i data-lucide="gauge" class="w-3.5 h-3.5"></i>
+          <span>Meraki Gen 2</span>
+        </button>
+        <button id="nav-saved" type="button" class="px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5">
+          <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+          <span>Saved <span id="saved-count-badge" class="ml-0.5 px-1.5 py-0.2 rounded-full bg-black/10 text-[10px] font-mono-num">0</span></span>
+        </button>
+      </nav>
+
+      <!-- Right Controls: Gemini AI Barista + Unit Toggle -->
+      <div class="flex items-center gap-1.5">
+        <button id="btn-ai-settings" type="button" title="Configure Gemini AI Barista" class="px-3 py-1.5 rounded-full bg-white hover:bg-stone-100 border border-[#e6e4de] text-xs font-semibold text-[#141414] transition-colors flex items-center gap-1.5 shadow-2xs">
+          <span id="ai-status-dot" class="w-2 h-2 rounded-full bg-[#b8b5ad]"></span>
+          <span id="ai-status-text">Gemini AI</span>
+        </button>
+        <button id="btn-unit-toggle" type="button" title="Toggle Fahrenheit / Celsius" class="px-3 py-1.5 rounded-full bg-white hover:bg-stone-100 border border-[#e6e4de] text-xs font-mono-num font-semibold text-[#141414] transition-colors shadow-2xs">
+          °F
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-5">
+    <!-- Active Workspace (Drip or Espresso) -->
+    <div id="workspace-view" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+      <!-- LEFT COLUMN: Bean Input + Taste Calibration Coach -->
+      <section class="lg:col-span-5 space-y-5">
+        <!-- Bean Configuration Card -->
+        <div class="fellow-card p-5">
+          <div class="flex items-center justify-between gap-2 mb-3.5">
+            <span class="fellow-label">Coffee Bean Profile</span>
+            <div class="flex items-center gap-1.5">
+              <button id="btn-save-pantry" type="button" class="text-[11px] px-2.5 py-1 rounded-full bg-[#141414] hover:bg-stone-800 text-white font-semibold transition">
+                + Pantry
+              </button>
+              <button id="btn-clear-bean" type="button" class="text-[11px] px-2.5 py-1 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] font-medium transition">
+                New
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="mb-4">
+            <div id="preset-buttons" class="flex flex-wrap gap-1.5"></div>
+          </div>
+
+          <!-- Smart Bag Photo & Text Detector -->
+          <div class="mb-4 rounded-2xl border border-[#e6e4de] bg-[#f7f6f3] p-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <label for="input-bag-parser" class="text-xs font-semibold text-[#141414] flex items-center gap-1.5">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#b36a35]"></i>
+                <span>Bag Photo & Text Detector</span>
+              </label>
+              <div class="flex items-center gap-1.5">
+                <input id="input-bag-photo" type="file" accept="image/*" class="hidden" />
+                <button id="btn-scan-photo" type="button" class="px-3 py-1.5 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-[11px] font-semibold transition flex items-center gap-1">
+                  <i data-lucide="camera" class="w-3 h-3"></i>
+                  <span>Scan Bag</span>
+                </button>
+                <button id="btn-parse-bag" type="button" class="px-3 py-1.5 rounded-full bg-white hover:bg-stone-100 border border-[#d9d6ce] text-[#141414] text-[11px] font-semibold transition">
+                  Detect
+                </button>
+              </div>
+            </div>
+            <textarea
+              id="input-bag-parser"
+              rows="2"
+              placeholder="Scan bag photo or type keywords (e.g., Ethiopia Guji Natural Light 2,100m)..."
+              class="w-full px-3 py-2 rounded-xl border border-[#e6e4de] bg-white text-[#141414] placeholder:text-[#9c9992] focus:outline-none focus:border-[#141414] transition"
+            ></textarea>
+            <div id="bag-photo-preview-row" class="hidden mt-2.5 flex items-center gap-2.5 bg-white rounded-xl border border-[#e6e4de] p-2">
+              <img id="bag-photo-thumb" src="" alt="Uploaded coffee bag preview" class="w-10 h-10 rounded-lg object-cover border border-[#e6e4de] shrink-0" />
+              <div class="flex-1 min-w-0">
+                <p id="bag-ocr-label" class="text-[11px] font-semibold text-[#141414] truncate">Reading bag label...</p>
+                <div class="w-full h-1.5 bg-[#ebe9e3] rounded-full overflow-hidden mt-1">
+                  <div id="bag-ocr-bar" class="h-full bg-[#141414] transition-all duration-200" style="width: 10%"></div>
+                </div>
+              </div>
+            </div>
+            <p id="bag-parser-status" class="hidden mt-2 text-[11px] font-medium text-[#57534e]"></p>
+          </div>
+
+          <!-- Manual Bean Name -->
+          <div class="mb-4">
+            <label for="input-bean-name" class="block fellow-label mb-1.5">Bean Name / Roaster</label>
+            <input
+              id="input-bean-name"
+              type="text"
+              placeholder="Enter any coffee bean name..."
+              class="w-full px-3.5 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] transition text-[#141414]"
+            />
+          </div>
+
+          <!-- Roast Level -->
+          <div class="mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="fellow-label">Roast Profile</span>
+              <span id="roast-label-pill" class="text-[11px] font-semibold text-[#141414] bg-[#f2f0eb] px-2.5 py-0.5 rounded-full">Medium</span>
+            </div>
+            <div id="roast-selector" class="grid grid-cols-5 gap-1.5"></div>
+          </div>
+
+          <!-- Process & Origin -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3.5">
+            <div>
+              <label for="select-process" class="block fellow-label mb-1.5">Process</label>
+              <select id="select-process" class="w-full px-3 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]">
+                <option value="washed">Washed</option>
+                <option value="natural">Natural</option>
+                <option value="honey">Honey / Pulped</option>
+                <option value="washed_natural">Washed + Natural</option>
+                <option value="anaerobic">Anaerobic</option>
+              </select>
+            </div>
+            <div>
+              <label for="select-origin" class="block fellow-label mb-1.5">Origin / Density</label>
+              <select id="select-origin" class="w-full px-3 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]">
+                <option value="americas">Central / S. America</option>
+                <option value="africa">High-Elev. Africa</option>
+                <option value="asia">Asia-Pacific</option>
+                <option value="italian">Italian Espresso</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Freshness / CO2 -->
+          <div>
+            <label for="select-freshness" class="block fellow-label mb-1.5">Freshness & Storage</label>
+            <select id="select-freshness" class="w-full px-3 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]">
+              <option value="fresh">Very Fresh (4–14 days)</option>
+              <option value="peak">Peak (2–4 wks / Airscape)</option>
+              <option value="bulk">Bulk / Warehouse (4–8+ wks)</option>
+              <option value="frozen">Frozen & Thawed Sealed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Taste Calibration Coach -->
+        <div class="fellow-card p-5">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <span class="fellow-label">Taste Calibration Coach</span>
+            <button id="btn-reset-calibration" type="button" class="hidden text-[11px] font-semibold text-[#b36a35] hover:underline">
+              Reset Baseline
+            </button>
+          </div>
+          <p class="text-xs text-[#6e6c67] mb-3.5">
+            Tap what you tasted in your cup or shot to get prioritized adjustments, or fine-tune any setting directly with <strong>− / +</strong>.
+          </p>
+
+          <div id="taste-chips" class="flex flex-wrap gap-1.5 mb-3"></div>
+
+          <!-- Free-form AI Barista Taste Note -->
+          <div class="mb-3.5 flex gap-1.5">
+            <input
+              id="input-taste-freeform"
+              type="text"
+              placeholder="Or describe taste (e.g., papery, sour at 22s, thin crema)..."
+              class="flex-1 min-w-0 px-3 py-2 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]"
+            />
+            <button id="btn-ask-barista" type="button" class="px-3.5 py-2 rounded-xl bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition shrink-0 flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span>Ask</span>
+            </button>
+          </div>
+
+          <div id="calibration-output" class="rounded-2xl border border-[#e6e4de] bg-[#f7f6f3] p-3.5">
+            <p class="text-xs text-[#6e6c67]">Select any taste note above to calibrate your recipe.</p>
+          </div>
+
+          <div id="calibration-actions" class="hidden mt-3 flex items-center gap-2">
+            <button id="btn-apply-adjustments" type="button" class="flex-1 py-2.5 px-4 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition flex items-center justify-center gap-1.5">
+              <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+              <span>Apply to Recipe</span>
+            </button>
+            <button id="btn-clear-symptoms" type="button" class="py-2.5 px-4 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] text-xs font-semibold transition">
+              Clear
+            </button>
+          </div>
+
+          <div id="active-offsets-banner" class="hidden mt-3 rounded-xl bg-[#f7f6f3] border border-[#e6e4de] px-3 py-2 text-xs text-[#141414] flex items-center justify-between gap-2">
+            <span id="active-offsets-text" class="font-medium truncate">Custom adjustments active</span>
+            <span class="font-mono-num font-semibold text-[10px] bg-[#141414] text-white px-2 py-0.5 rounded-full shrink-0" id="calibration-step-count">Tuned</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Curated Machine Settings -->
+      <section class="lg:col-span-7 space-y-5">
+        <!-- ================= DRIP MODE: FELLOW ODE 2 + AIDEN ================= -->
+        <div id="panel-drip" class="space-y-5">
+          <!-- Basket & Volume Card -->
+          <div class="fellow-card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <span class="fellow-label">Fellow Aiden • Curated Profile</span>
+                <h2 id="drip-bean-heading" class="text-xl font-semibold tracking-tight text-[#141414] mt-0.5">Parisi Bolivian Organic</h2>
+              </div>
+              <span class="text-[11px] text-[#6e6c67] bg-[#f2f0eb] px-2.5 py-1 rounded-full font-medium">25 mL steps</span>
+            </div>
+
+            <!-- GREEN (Single Serve) vs BLUE (Batch Brew) Basket Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              <button id="btn-aiden-single" type="button" class="text-left rounded-2xl p-4 border-2 transition">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#167956]">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#167956]"></span>
+                    Green • Single Serve
+                  </span>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#167956]/10 text-[#167956]">#2 Cone • 1-Dot</span>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <span id="green-card-water" class="font-mono-num text-lg font-bold text-[#141414]">300 mL</span>
+                  <span id="green-card-beans" class="font-mono-num text-sm font-semibold text-[#167956]">18.8 g beans</span>
+                </div>
+                <p class="text-[11px] text-[#6e6c67] mt-1">150–450 mL • Green Basket</p>
+              </button>
+
+              <button id="btn-aiden-batch" type="button" class="text-left rounded-2xl p-4 border-2 transition">
+                <div class="flex items-center justify-between gap-2 mb-2">
+                  <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#1e5ed6]">
+                    <span class="w-2.5 h-2.5 rounded-full bg-[#1e5ed6]"></span>
+                    Blue • Batch Brew
+                  </span>
+                  <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1e5ed6]/10 text-[#1e5ed6]">Flat • 3-Dot</span>
+                </div>
+                <div class="flex items-baseline justify-between">
+                  <span id="blue-card-water" class="font-mono-num text-lg font-bold text-[#141414]">900 mL</span>
+                  <span id="blue-card-beans" class="font-mono-num text-sm font-semibold text-[#1e5ed6]">56.3 g beans</span>
+                </div>
+                <p class="text-[11px] text-[#6e6c67] mt-1">450–1,500 mL • Max 82.5 g</p>
+              </button>
+            </div>
+
+            <!-- Active Volume Slider (25 mL increments) -->
+            <div id="aiden-vol-box" class="rounded-2xl border p-4 transition">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                <label for="slider-aiden-vol" id="aiden-vol-label" class="text-xs font-semibold text-[#141414]">Green Single-Serve Volume</label>
+                <div class="flex items-center gap-2">
+                  <span id="aiden-vol-readout" class="font-mono-num text-sm font-bold text-[#141414]">300 mL</span>
+                  <span id="aiden-dose-inline" class="font-mono-num text-xs font-semibold px-2.5 py-0.5 rounded-full">18.8 g beans</span>
+                  <span id="aiden-cups-readout" class="text-[11px] text-[#6e6c67]">(~10.1 oz)</span>
+                </div>
+              </div>
+              <input id="slider-aiden-vol" type="range" min="150" max="450" step="25" value="300" class="w-full cursor-pointer accent-green" />
+              <div class="flex justify-between text-[10.5px] text-[#6e6c67] font-mono-num mt-1.5">
+                <span id="aiden-vol-min">150 mL</span>
+                <span id="aiden-vol-mid">300 mL</span>
+                <span id="aiden-vol-max">450 mL</span>
+              </div>
+              <div id="aiden-cap-warning" class="hidden mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-[11px] font-medium">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
+                Ratio widened automatically to stay within Blue Basket 82.5 g max dose
+              </div>
+            </div>
+          </div>
+
+          <!-- Fellow Ode Gen 2 Matte Black Dial Card (Stepped Clicks Notation) -->
+          <div class="bg-[#141414] text-white rounded-[1.35rem] p-5 shadow-xs">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+              <div>
+                <p class="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-stone-400">Fellow Ode Gen 2 • Stepped Dial</p>
+                <h3 class="text-xs text-stone-400 mt-0.5">64mm Flat Burrs • Whole Number + Clicks (2 clicks between numbers)</h3>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <button id="btn-ode-finer" type="button" title="1 click finer" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-lg flex items-center justify-center transition">−</button>
+                <div class="text-center min-w-[110px]">
+                  <span id="ode-grind-value" class="font-mono-num text-2xl sm:text-3xl font-bold text-white tracking-tight">5 + 1</span>
+                  <div id="ode-grind-sub" class="text-[10px] uppercase tracking-wider text-stone-400">1 click past 5</div>
+                </div>
+                <button id="btn-ode-coarser" type="button" title="1 click coarser" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-lg flex items-center justify-center transition">+</button>
+                <span id="ode-grind-delta" class="hidden delta-badge text-[11px] font-mono-num font-semibold px-2 py-0.5 rounded-full bg-white/15 text-amber-300"></span>
+              </div>
+            </div>
+
+            <!-- Visual 1-11 Dial Bar -->
+            <div class="relative pt-2 pb-1">
+              <div class="h-2 w-full rounded-full bg-white/15 overflow-hidden">
+                <div id="ode-dial-fill" class="h-full bg-white transition-all duration-300" style="width: 45%"></div>
+              </div>
+              <div id="ode-dial-marker" class="absolute top-0.5 -ml-2 w-4 h-5 rounded-full bg-white border-2 border-[#141414] shadow transition-all duration-300" style="left: 45%"></div>
+              <div class="flex justify-between text-[10px] font-mono-num text-stone-400 mt-2">
+                <span>1</span>
+                <span>3</span>
+                <span>5</span>
+                <span>7</span>
+                <span>9</span>
+                <span>11</span>
+              </div>
+            </div>
+            <p id="ode-grind-note" class="mt-2.5 text-xs text-stone-300"></p>
+          </div>
+
+          <!-- Fellow Aiden Core Brew & Bloom Settings -->
+          <div class="fellow-card p-5">
+            <div class="flex items-center justify-between gap-2 mb-3.5">
+              <span class="fellow-label">Fellow Aiden • Brew & Bloom</span>
+              <span class="text-[11px] text-[#6e6c67]">Edit Profiles → Advanced</span>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4" id="aiden-core-grid"></div>
+
+            <!-- Minimalist Pour Timeline -->
+            <div class="rounded-2xl bg-[#f7f6f3] border border-[#e6e4de] p-3.5 mb-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-semibold text-[#141414]" id="timeline-title">Pour Sequence</span>
+                <span class="text-[11px] font-mono-num text-[#6e6c67]" id="timeline-total">Est. ~3:00</span>
+              </div>
+              <div id="aiden-timeline-bars" class="flex gap-1.5 h-9 w-full"></div>
+              <div id="aiden-timeline-legend" class="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[11px] text-[#6e6c67]"></div>
+            </div>
+
+            <!-- Green Single Serve & Blue Batch Pulses -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              <div id="card-single-pulses" class="rounded-2xl border-2 p-4 transition">
+                <div class="flex items-center justify-between gap-1 mb-1.5">
+                  <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#167956]">
+                    <span class="w-2 h-2 rounded-full bg-[#167956]"></span>
+                    Green • Single Pulses
+                  </span>
+                  <span id="badge-single-active" class="text-[10px] font-semibold px-2 py-0.5 rounded-full">150–450 mL</span>
+                </div>
+                <p id="single-pulse-dose-summary" class="text-[11px] font-mono-num font-semibold text-[#167956] bg-[#167956]/10 rounded-lg px-2.5 py-1 mb-2.5"></p>
+                <div id="aiden-single-pulses-body" class="space-y-2 text-xs"></div>
+              </div>
+
+              <div id="card-batch-pulses" class="rounded-2xl border-2 p-4 transition">
+                <div class="flex items-center justify-between gap-1 mb-1.5">
+                  <span class="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#1e5ed6]">
+                    <span class="w-2 h-2 rounded-full bg-[#1e5ed6]"></span>
+                    Blue • Batch Pulses
+                  </span>
+                  <span id="badge-batch-active" class="text-[10px] font-semibold px-2 py-0.5 rounded-full">450–1,500 mL</span>
+                </div>
+                <p id="batch-pulse-dose-summary" class="text-[11px] font-mono-num font-semibold text-[#1e5ed6] bg-[#1e5ed6]/10 rounded-lg px-2.5 py-1 mb-2.5"></p>
+                <div id="aiden-batch-pulses-body" class="space-y-2 text-xs"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drip Action Bar -->
+          <div class="fellow-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <button id="btn-copy-drip" type="button" class="px-4 py-2 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] text-xs font-semibold transition flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Copy Profile</span>
+              </button>
+              <button id="btn-open-save-drip" type="button" class="px-4 py-2 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition flex items-center gap-1.5">
+                <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+                <span>Save to Journal</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-[#6e6c67]">Rinse filter & discard rinse water before brewing.</p>
+          </div>
+        </div>
+
+        <!-- ================= ESPRESSO MODE: MERAKI GEN 2 ================= -->
+        <div id="panel-espresso" class="hidden space-y-5">
+          <!-- Drink Type Selector -->
+          <div class="fellow-card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+              <div>
+                <span class="fellow-label">Meraki Gen 2 • Curated Recipe</span>
+                <h2 id="espresso-bean-heading" class="text-xl font-semibold tracking-tight text-[#141414] mt-0.5">Parisi Bolivian Organic</h2>
+              </div>
+              <span class="text-[11px] font-medium text-[#6e6c67] bg-[#f2f0eb] px-2.5 py-1 rounded-full">Warm up ~10 min</span>
+            </div>
+
+            <div id="drink-selector" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+          </div>
+
+          <!-- Meraki Grind Dial Card -->
+          <div class="bg-[#141414] text-white rounded-[1.35rem] p-5 shadow-xs">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-3.5">
+              <div>
+                <p class="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-stone-400">Meraki Gen 2 • Integrated Grinder</p>
+                <h3 class="text-xs text-stone-400 mt-0.5">37mm Conical Burrs • Dial 1–45</h3>
+              </div>
+              <div class="flex items-center gap-2.5">
+                <button id="btn-meraki-finer" type="button" title="1 step finer" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-lg flex items-center justify-center transition">−</button>
+                <div class="text-center min-w-[60px]">
+                  <span id="meraki-grind-value" class="font-mono-num text-3xl font-bold text-white">15</span>
+                  <div class="text-[10px] uppercase tracking-wider text-stone-400">Grind Dial</div>
+                </div>
+                <button id="btn-meraki-coarser" type="button" title="1 step coarser" class="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white font-semibold text-lg flex items-center justify-center transition">+</button>
+                <span id="meraki-grind-delta" class="hidden delta-badge text-[11px] font-mono-num font-semibold px-2 py-0.5 rounded-full bg-white/15 text-amber-300"></span>
+              </div>
+            </div>
+
+            <div class="relative pt-2 pb-1">
+              <div class="h-2 w-full rounded-full bg-white/15 overflow-hidden">
+                <div id="meraki-dial-fill" class="h-full bg-white transition-all duration-300" style="width: 33%"></div>
+              </div>
+              <div id="meraki-dial-marker" class="absolute top-0.5 -ml-2 w-4 h-5 rounded-full bg-white border-2 border-[#141414] shadow transition-all duration-300" style="left: 33%"></div>
+              <div class="flex justify-between text-[10px] font-mono-num text-stone-400 mt-2">
+                <span>1 (Finest)</span>
+                <span>15 (Espresso)</span>
+                <span>30</span>
+                <span>45 (Coarse)</span>
+              </div>
+            </div>
+            <p id="meraki-grind-note" class="mt-2.5 text-xs text-stone-300"></p>
+          </div>
+
+          <!-- Strictly Adjustable Meraki Gen 2 Controls -->
+          <div class="fellow-card p-5 space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <span class="fellow-label">Meraki Gen 2 • Machine Settings</span>
+              <span class="text-[11px] text-[#6e6c67]">Adjustable on machine</span>
+            </div>
+
+            <!-- Core Brew Grid: Grind Weight, Brew Weight, Brew Temp, Group Head Temp -->
+            <div id="meraki-core-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+
+            <!-- Pre-Infusion Control Block (ON/OFF + 3/4 bar + 5-15s) -->
+            <div id="meraki-preinfusion-card" class="rounded-2xl border border-[#e6e4de] bg-[#f7f6f3] p-4"></div>
+
+            <!-- Milk Steam Settings (Shown ONLY for milk drinks) -->
+            <div id="meraki-milk-section" class="hidden rounded-2xl border border-[#e6e4de] bg-[#f7f6f3] p-4"></div>
+          </div>
+
+          <!-- Drink Build & Cup Visualizer -->
+          <div class="fellow-card p-5">
+            <span class="fellow-label block mb-3" id="drink-build-title">Drink Assembly — Espresso</span>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
+              <div class="sm:col-span-4 flex justify-center">
+                <div id="drink-cup-svg" class="w-36 h-36 flex items-center justify-center"></div>
+              </div>
+              <div class="sm:col-span-8 space-y-2.5" id="drink-build-details"></div>
+            </div>
+          </div>
+
+          <!-- Espresso Action Bar -->
+          <div class="fellow-card p-4 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <button id="btn-copy-espresso" type="button" class="px-4 py-2 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] text-xs font-semibold transition flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                <span>Copy Recipe</span>
+              </button>
+              <button id="btn-open-save-espresso" type="button" class="px-4 py-2 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition flex items-center gap-1.5">
+                <i data-lucide="bookmark-plus" class="w-3.5 h-3.5"></i>
+                <span>Save to Journal</span>
+              </button>
+            </div>
+            <p class="text-[11px] text-[#6e6c67]">Adjust 1 setting at a time: Grind → Brew Weight → Temp.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ================= SAVED RECIPES / TASTING JOURNAL VIEW ================= -->
+    <div id="saved-view" class="hidden max-w-4xl mx-auto space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <span class="fellow-label">Library</span>
+          <h2 class="text-xl font-semibold tracking-tight text-[#141414]">Saved Recipes & Journal</h2>
+        </div>
+        <button id="btn-back-to-dial" type="button" class="px-4 py-2 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition">
+          Back to Studio
+        </button>
+      </div>
+      <div id="saved-list" class="space-y-3"></div>
+    </div>
+  </main>
+
+  <!-- iOS-Style Mobile Bottom Tab Bar -->
+  <nav class="sm:hidden fixed bottom-0 inset-x-0 z-30 bg-[#f7f6f3]/95 backdrop-blur-md border-t border-[#e6e4de] ios-safe-bottom px-3 pt-2" aria-label="Mobile Navigation">
+    <div class="grid grid-cols-3 gap-1 max-w-md mx-auto">
+      <button id="mob-nav-drip" type="button" class="flex flex-col items-center justify-center py-1 rounded-xl text-[11px] font-semibold transition">
+        <i data-lucide="droplets" class="w-5 h-5 mb-0.5"></i>
+        <span>Aiden</span>
+      </button>
+      <button id="mob-nav-espresso" type="button" class="flex flex-col items-center justify-center py-1 rounded-xl text-[11px] font-semibold transition">
+        <i data-lucide="gauge" class="w-5 h-5 mb-0.5"></i>
+        <span>Meraki</span>
+      </button>
+      <button id="mob-nav-saved" type="button" class="flex flex-col items-center justify-center py-1 rounded-xl text-[11px] font-semibold transition">
+        <i data-lucide="bookmark" class="w-5 h-5 mb-0.5"></i>
+        <span>Saved (<span id="mob-saved-count">0</span>)</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Save Recipe Modal -->
+  <div id="save-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border border-[#e6e4de] shadow-2xl max-w-md w-full p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-base font-semibold text-[#141414]">Save to Journal</h3>
+        <button id="btn-close-modal" type="button" class="p-1.5 text-[#6e6c67] hover:text-[#141414] rounded-full">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <p id="save-modal-summary" class="text-xs text-[#57534e] bg-[#f7f6f3] border border-[#e6e4de] rounded-2xl p-3 mb-3.5"></p>
+
+      <div class="mb-3.5">
+        <label class="block fellow-label mb-1.5">Taste Rating</label>
+        <div id="modal-star-rating" class="flex items-center gap-1.5"></div>
+      </div>
+
+      <div class="mb-4">
+        <label for="input-tasting-note" class="block fellow-label mb-1.5">Tasting Notes</label>
+        <textarea id="input-tasting-note" rows="3" placeholder="e.g., Sweet milk chocolate, thick crema..." class="w-full px-3.5 py-2.5 rounded-2xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414]"></textarea>
+      </div>
+
+      <div class="flex items-center justify-end gap-2">
+        <button id="btn-cancel-save" type="button" class="px-4 py-2 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] text-xs font-semibold">Cancel</button>
+        <button id="btn-confirm-save" type="button" class="px-5 py-2 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold">Save Recipe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gemini AI Barista Settings Modal -->
+  <div id="ai-modal" class="hidden fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl border border-[#e6e4de] shadow-2xl max-w-md w-full p-5">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-full bg-[#141414] text-white flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+          </div>
+          <h3 class="text-base font-semibold text-[#141414]">Gemini AI Barista</h3>
+        </div>
+        <button id="btn-close-ai-modal" type="button" class="p-1.5 text-[#6e6c67] hover:text-[#141414] rounded-full">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <p class="text-xs text-[#6e6c67] leading-relaxed mb-4">
+        Add your personal Google AI Studio key so <strong>Scan Bag</strong>, <strong>Detect</strong>, and <strong>Ask Barista</strong> query Gemini live for exact bean identification, vision bag reading, and taste coaching. Your key stays strictly in your device’s local storage.
+      </p>
+
+      <div class="mb-3.5">
+        <div class="flex items-center justify-between mb-1.5">
+          <label for="input-gemini-key" class="fellow-label">Gemini API Key</label>
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[11px] font-semibold text-[#1e5ed6] hover:underline">Get free key ↗</a>
+        </div>
+        <input
+          id="input-gemini-key"
+          type="password"
+          autocomplete="off"
+          placeholder="AIza..."
+          class="w-full px-3.5 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]"
+        />
+      </div>
+
+      <div class="mb-4">
+        <label for="select-gemini-model" class="block fellow-label mb-1.5">Model</label>
+        <select id="select-gemini-model" class="w-full px-3 py-2.5 rounded-xl border border-[#e6e4de] bg-[#faf9f7] focus:bg-white focus:outline-none focus:border-[#141414] text-[#141414]">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast • Recommended)</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro (Deep Barista Reasoning)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-between gap-2">
+        <button id="btn-clear-ai-key" type="button" class="px-3.5 py-2 rounded-full bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition">Remove Key</button>
+        <div class="flex items-center gap-2">
+          <button id="btn-cancel-ai-modal" type="button" class="px-4 py-2 rounded-full bg-[#f2f0eb] hover:bg-[#e6e4de] text-[#141414] text-xs font-semibold">Cancel</button>
+          <button id="btn-save-ai-key" type="button" class="px-5 py-2 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold">Save Key</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="fixed bottom-20 sm:bottom-5 right-4 z-50 pointer-events-none"></div>
+
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS & GROUNDED HARDWARE DATA
+    // =========================================================================
+    const ROAST_LEVELS = [
+      { id: 'light', label: 'Light', short: 'Light', color: '#b58458' },
+      { id: 'light_medium', label: 'Light-Med', short: 'Lt-Med', color: '#8f5d38' },
+      { id: 'medium', label: 'Medium', short: 'Medium', color: '#6b4024' },
+      { id: 'medium_dark', label: 'Med-Dark', short: 'Md-Drk', color: '#472816' },
+      { id: 'dark', label: 'Dark', short: 'Dark', color: '#26140a' }
+    ];
+
+    // Exact 5 Meraki Gen 2 Group Head Temperatures
+    const MERAKI_GROUP_TEMPS_F = [86, 104, 122, 140, 158];
+
+    const MILK_TYPES = [
+      {
+        id: 'kirkland_2uf',
+        name: 'Kirkland 2% Ultra-Filtered',
+        short: 'Kirkland 2% UF',
+        tempOffsetF: -5,
+        forceMediumExceptCap: true,
+        forceMediumAll: false,
+        tip: 'High concentrated protein foams fast—aerate briefly (2–3s) then roll. Keep under 142°F for peak sweetness.'
+      },
+      {
+        id: 'almond_cow_cashew',
+        name: 'Homemade Cashew (Almond Cow)',
+        short: 'Almond Cow Cashew',
+        tempOffsetF: -10,
+        forceMediumExceptCap: false,
+        forceMediumAll: true,
+        tip: 'No commercial stabilizers—always use Medium steam & stay below 135°F to prevent splitting in espresso. Let shot cool 10–15s before pouring.'
+      },
+      {
+        id: 'whole_dairy',
+        name: 'Whole Dairy Milk',
+        short: 'Whole Milk',
+        tempOffsetF: 0,
+        forceMediumExceptCap: false,
+        forceMediumAll: false,
+        tip: 'Classic fat & protein balance—handles Strong steam cleanly for glossy microfoam up to 145–150°F.'
+      },
+      {
+        id: 'barista_oat',
+        name: 'Barista Oat Milk',
+        short: 'Barista Oat',
+        tempOffsetF: -4,
+        forceMediumExceptCap: true,
+        forceMediumAll: false,
+        tip: 'Starch thickens rapidly above 140°F—steam on Medium to 135–140°F and swirl vigorously before pouring.'
+      }
+    ];
+
+    const DEFAULT_PRESETS = [
+      {
+        id: 'parisi',
+        name: 'Parisi Bolivian Organic (Costco)',
+        roast: 'medium',
+        process: 'washed',
+        origin: 'americas',
+        freshness: 'bulk'
+      },
+      {
+        id: 'kirkland_mx',
+        name: 'Kirkland Organic Mexico (Oaxaca)',
+        roast: 'medium_dark',
+        process: 'washed',
+        origin: 'americas',
+        freshness: 'bulk'
+      },
+      {
+        id: 'tokado_eth',
+        name: 'Tokado Ethiopia Haile Selassie',
+        roast: 'light_medium',
+        process: 'washed_natural',
+        origin: 'africa',
+        freshness: 'peak',
+        overrideAiden: { ratio: 15, tempC: 90, bloomRatio: 2, bloomTime: 35, singlePulses: 3, singlePause: 23, odeSingleIdx: 15, singleVol: 200 }
+      },
+      {
+        id: 'lavazza_ce',
+        name: 'Lavazza Caffé Espresso 100% Arabica',
+        roast: 'medium',
+        process: 'washed',
+        origin: 'italian',
+        freshness: 'bulk'
+      }
+    ];
+
+    const DRINK_TYPES = [
+      {
+        id: 'espresso', name: 'Espresso', subtitle: 'Pure double shot',
+        isMilk: false, ratioDelta: 0, doseDefault: 18.0,
+        milkMl: 0, foamMm: 0, waterMl: 0, iceG: 0, milkTempF: 0, steamLevel: 'medium', cupType: 'demitasse',
+        buildSteps: [
+          'Pre-warm a 3 oz demitasse cup.',
+          'Pull double shot directly into cup; swirl gently to integrate crema.',
+          'Serve immediately for peak aroma and syrupy body.'
+        ]
+      },
+      {
+        id: 'americano', name: 'Americano', subtitle: 'Clean & lengthened',
+        isMilk: false, ratioDelta: 0.1, doseDefault: 18.0,
+        milkMl: 0, foamMm: 0, waterMl: 120, iceG: 0, milkTempF: 0, steamLevel: 'medium', cupType: 'mug',
+        buildSteps: [
+          'Add 120 mL hot water (~190°F) into an 8 oz mug first to preserve crema.',
+          'Pull the slightly lengthened shot directly over the hot water.',
+          'Adjust water between 90–150 mL to preference.'
+        ]
+      },
+      {
+        id: 'cortado', name: 'Cortado', subtitle: 'Equal espresso & milk',
+        isMilk: true, ratioDelta: -0.15, doseDefault: 18.0,
+        milkMl: 45, foamMm: 4, waterMl: 0, iceG: 0, milkTempF: 136, steamLevel: 'medium', cupType: 'gibraltar',
+        buildSteps: [
+          'Pull a tighter, concentrated shot so espresso cuts cleanly through equal milk.',
+          'Steam 45–50 mL milk on Medium steam to 136°F with thin silky microfoam.',
+          'Pour into a 4.5 oz Gibraltar glass.'
+        ]
+      },
+      {
+        id: 'flat_white', name: 'Flat White', subtitle: 'Velvety microfoam',
+        isMilk: true, ratioDelta: -0.15, doseDefault: 18.5,
+        milkMl: 120, foamMm: 6, waterMl: 0, iceG: 0, milkTempF: 140, steamLevel: 'medium', cupType: 'ceramic',
+        buildSteps: [
+          'Dose 18.5 g and pull a rich, ristretto-leaning shot for bold flavor in milk.',
+          'Steam 120 mL milk on Medium steam to 140°F with glossy microfoam (~5–6 mm).',
+          'Pour steadily into a 6 oz cup for unified texture.'
+        ]
+      },
+      {
+        id: 'cappuccino', name: 'Cappuccino', subtitle: 'Rich foam dome',
+        isMilk: true, ratioDelta: -0.05, doseDefault: 18.0,
+        milkMl: 115, foamMm: 14, waterMl: 0, iceG: 0, milkTempF: 144, steamLevel: 'strong', cupType: 'ceramic',
+        buildSteps: [
+          'Pull a balanced shot into a wide 6 oz cappuccino cup.',
+          'Steam 115 mL milk on Strong steam to 144°F, stretching ~30% for a structured foam dome.',
+          'Pour with a gentle lift to frame the crema halo.'
+        ]
+      },
+      {
+        id: 'latte', name: 'Latte', subtitle: 'Creamy & smooth',
+        isMilk: true, ratioDelta: -0.1, doseDefault: 18.5,
+        milkMl: 210, foamMm: 8, waterMl: 0, iceG: 0, milkTempF: 145, steamLevel: 'strong', cupType: 'tall',
+        buildSteps: [
+          'Dose 18.5 g at a tighter ratio so espresso holds its chocolate backbone in 7 oz milk.',
+          'Steam 210 mL milk on Strong steam to 145°F for smooth, pourable microfoam.',
+          'Swirl pitcher well and pour into a 10–12 oz cup.'
+        ]
+      },
+      {
+        id: 'iced_espresso', name: 'Iced Espresso', subtitle: 'Bright & chilled',
+        isMilk: false, ratioDelta: -0.2, doseDefault: 18.5,
+        milkMl: 0, foamMm: 0, waterMl: 45, iceG: 110, milkTempF: 0, steamLevel: 'medium', cupType: 'iced',
+        buildSteps: [
+          'Pull a concentrated shot to offset ice melt dilution.',
+          'Fill a 10 oz glass with 110 g large ice cubes + 45 mL cold water (or swap for 150 mL cold milk).',
+          'Pour espresso over cold liquid/ice immediately.'
+        ]
+      }
+    ];
+
+    const TASTE_SYMPTOMS = {
+      drip: [
+        { id: 'sour', label: 'Sour / Sharp' },
+        { id: 'bitter', label: 'Bitter / Ashy' },
+        { id: 'weak', label: 'Weak / Watery' },
+        { id: 'strong', label: 'Too Strong / Heavy' },
+        { id: 'dry', label: 'Dry / Astringent' },
+        { id: 'slow', label: 'Slow / Backed Up' },
+        { id: 'fast', label: 'Too Fast / Hollow' }
+      ],
+      espresso: [
+        { id: 'sour', label: 'Sour / Sharp' },
+        { id: 'bitter', label: 'Bitter / Harsh' },
+        { id: 'weak', label: 'Thin / Watery' },
+        { id: 'strong', label: 'Too Intense' },
+        { id: 'fast', label: 'Ran Too Fast' },
+        { id: 'slow', label: 'Choked / Too Slow' },
+        { id: 'thin_crema', label: 'Thin Crema' },
+        { id: 'lost_in_milk', label: 'Lost in Milk / Ice' }
+      ]
+    };
+
+    // Fellow Ode Gen 2: 31 stepped positions (1 to 11, with 2 clicks between whole numbers)
+    function odeIndexToParts(idx) {
+      const clamped = Math.max(0, Math.min(30, Math.round(idx)));
+      const major = Math.floor(clamped / 3) + 1;
+      const clicks = clamped % 3;
+      const shortLabel = clicks === 0 ? `${major}` : `${major} + ${clicks}`;
+      const fullLabel = clicks === 0 ? `${major}` : `${major} + ${clicks} ${clicks === 1 ? 'click' : 'clicks'}`;
+      const subLabel = clicks === 0 ? `Whole number ${major}` : `${clicks} ${clicks === 1 ? 'click' : 'clicks'} past ${major}`;
+      return { major, clicks, shortLabel, fullLabel, subLabel };
+    }
+
+    function clamp(val, min, max) {
+      return Math.max(min, Math.min(max, val));
+    }
+
+    function freshDripOffsets() {
+      return {
+        odeSteps: 0,
+        tempC: 0,
+        ratio: 0,
+        bloomRatio: 0,
+        bloomTime: 0,
+        bloomTempC: 0,
+        singlePulses: 0,
+        singlePause: 0,
+        singlePulseTempDeltas: [0, 0, 0, 0],
+        batchPulses: 0,
+        batchPause: 0,
+        batchPulseTempDeltas: [0, 0, 0],
+        count: 0
+      };
+    }
+
+    function freshEspressoOffsets() {
+      return {
+        grindSteps: 0,
+        dose: 0,
+        brewWeightDelta: 0,
+        brewTempC: 0,
+        groupTempIdxOverride: null, // 0..4 index into MERAKI_GROUP_TEMPS_F
+        preInfusionOnOverride: null, // true | false | null
+        preInfusionBarOverride: null, // 3 | 4 | null
+        preInfusionTimeDelta: 0,
+        steamLevelOverride: null, // 'medium' | 'strong' | null
+        milkTempFDelta: 0,
+        count: 0
+      };
+    }
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    const state = {
+      activeTab: 'drip',
+      unit: 'F', // Default °F to match Meraki group head temps (86, 104, 122, 140, 158°F)
+      bean: {
+        presetId: 'parisi',
+        name: 'Parisi Bolivian Organic (Costco)',
+        roast: 'medium',
+        process: 'washed',
+        origin: 'americas',
+        freshness: 'bulk'
+      },
+      customPresets: [],
+      dripMode: 'single',
+      singleVol: 300,
+      batchVol: 900,
+      drinkType: 'espresso',
+      milkType: 'kirkland_2uf',
+      selectedSymptoms: new Set(),
+      offsets: {
+        drip: freshDripOffsets(),
+        espresso: freshEspressoOffsets()
+      },
+      modalRating: 5,
+      savedRecipes: [],
+      ai: {
+        apiKey: '',
+        model: 'gemini-2.5-flash',
+        busy: false,
+        customPlan: null,
+        lastBeanNote: ''
+      }
+    };
+
+    function getAllPresets() {
+      return [...DEFAULT_PRESETS, ...state.customPresets];
+    }
+
+    function loadStorage() {
+      try {
+        const rawSaved = localStorage.getItem('barista_dial_in_saved_v2');
+        if (rawSaved) {
+          const parsed = JSON.parse(rawSaved);
+          if (Array.isArray(parsed)) state.savedRecipes = parsed;
+        }
+        const rawPantry = localStorage.getItem('barista_dial_in_pantry_v1');
+        if (rawPantry) {
+          const parsed = JSON.parse(rawPantry);
+          if (Array.isArray(parsed)) state.customPresets = parsed;
+        }
+        const savedKey = localStorage.getItem('barista_gemini_api_key');
+        if (savedKey) state.ai.apiKey = savedKey;
+        const savedModel = localStorage.getItem('barista_gemini_model');
+        if (savedModel) state.ai.model = savedModel;
+      } catch (e) {}
+    }
+
+    function persistAiSettings() {
+      try {
+        if (state.ai.apiKey) localStorage.setItem('barista_gemini_api_key', state.ai.apiKey);
+        else localStorage.removeItem('barista_gemini_api_key');
+        localStorage.setItem('barista_gemini_model', state.ai.model);
+      } catch (e) {}
+    }
+
+    function persistSavedRecipes() {
+      try { localStorage.setItem('barista_dial_in_saved_v2', JSON.stringify(state.savedRecipes)); } catch (e) {}
+    }
+
+    function persistCustomPresets() {
+      try { localStorage.setItem('barista_dial_in_pantry_v1', JSON.stringify(state.customPresets)); } catch (e) {}
+    }
+
+    // =========================================================================
+    // 3. RECIPE CALCULATION ENGINES
+    // =========================================================================
+    function formatTempFromC(tempC) {
+      if (state.unit === 'F') return `${Math.round(tempC * 9 / 5 + 32)}°F`;
+      return `${Math.round(tempC)}°C`;
+    }
+
+    function formatTempFromF(tempF) {
+      if (state.unit === 'C') return `${Math.round((tempF - 32) * 5 / 9)}°C`;
+      return `${Math.round(tempF)}°F`;
+    }
+
+    function computeAidenRecipe() {
+      const b = state.bean;
+      const preset = getAllPresets().find(p => p.id === b.presetId);
+      const ov = preset && preset.overrideAiden ? preset.overrideAiden : null;
+
+      let baseTempC = { light: 97, light_medium: 95, medium: 93, medium_dark: 91, dark: 89 }[b.roast] || 93;
+      let baseRatio = { light: 16.5, light_medium: 16, medium: 16, medium_dark: 15.5, dark: 15 }[b.roast] || 16;
+      let baseBloomRatio = b.roast === 'light' ? 2.5 : 2.0;
+      let baseBloomTime = { light: 40, light_medium: 35, medium: 30, medium_dark: 30, dark: 25 }[b.roast] || 30;
+      let baseSinglePulses = (b.roast === 'light' || b.roast === 'light_medium') ? 3 : 2;
+      let baseSinglePause = baseSinglePulses === 3 ? 23 : 25;
+      let baseBatchPulses = (b.roast === 'light' || b.roast === 'light_medium') ? 2 : 1;
+      let baseBatchPause = 25;
+
+      if (b.process === 'natural' || b.process === 'anaerobic') {
+        baseTempC -= 1;
+        baseBloomTime += 5;
+      } else if (b.process === 'washed_natural') {
+        baseBloomTime += 5;
+      }
+      if (b.origin === 'italian') {
+        baseTempC = Math.min(baseTempC, 92);
+        baseSinglePulses = 2;
+        baseBatchPulses = 1;
+      }
+      if (b.origin === 'africa' && (b.roast === 'light' || b.roast === 'light_medium')) {
+        baseTempC += 1;
+      }
+      if (b.freshness === 'fresh') baseBloomTime += 10;
+      else if (b.freshness === 'bulk') baseBloomTime = Math.max(25, baseBloomTime - 5);
+
+      let roastOdeOffset = { light: 0, light_medium: 1, medium: 2, medium_dark: 3, dark: 4 }[b.roast] || 2;
+      let processOdeOffset = (b.process === 'natural' || b.process === 'anaerobic') ? 1 : 0;
+      let originOdeOffset = b.origin === 'africa' ? 1 : (b.origin === 'italian' ? 1 : 0);
+
+      let volStepSingle = 0;
+      if (state.singleVol <= 225) volStepSingle = -1;
+      else if (state.singleVol >= 375) volStepSingle = 2;
+      else if (state.singleVol >= 300) volStepSingle = 1;
+      let baseOdeSingleIdx = 10 + roastOdeOffset + processOdeOffset + originOdeOffset + volStepSingle;
+
+      let volStepBatch = 0;
+      if (state.batchVol <= 650) volStepBatch = 4;
+      else if (state.batchVol <= 1000) volStepBatch = 7;
+      else volStepBatch = 10;
+      let baseOdeBatchIdx = 11 + roastOdeOffset + processOdeOffset + volStepBatch;
+
+      if (ov) {
+        baseRatio = ov.ratio;
+        baseTempC = ov.tempC;
+        baseBloomRatio = ov.bloomRatio;
+        baseBloomTime = ov.bloomTime;
+        baseSinglePulses = ov.singlePulses;
+        baseSinglePause = ov.singlePause;
+        baseOdeSingleIdx = ov.odeSingleIdx + (state.singleVol > 300 ? 1 : 0);
+      }
+
+      const off = state.offsets.drip;
+      const finalTempC = clamp(baseTempC + off.tempC, 80, 99);
+      const finalBloomTempC = clamp(finalTempC + off.bloomTempC, 80, 99);
+      const finalRatioRaw = clamp(Number((baseRatio + off.ratio).toFixed(1)), 12.5, 19.5);
+      const finalBloomRatio = clamp(Number((baseBloomRatio + off.bloomRatio).toFixed(1)), 1.0, 3.5);
+      const finalBloomTime = clamp(baseBloomTime + off.bloomTime, 15, 65);
+
+      const finalSinglePulses = clamp(baseSinglePulses + off.singlePulses, 1, 4);
+      const finalSinglePause = clamp(baseSinglePause + off.singlePause, 10, 45);
+      const finalBatchPulses = clamp(baseBatchPulses + off.batchPulses, 1, 3);
+      const finalBatchPause = clamp(baseBatchPause + off.batchPause, 10, 45);
+
+      const singleDoseG = Number((state.singleVol / finalRatioRaw).toFixed(1));
+      let batchDoseG = state.batchVol / finalRatioRaw;
+      let batchRatio = finalRatioRaw;
+      let batchCapWarning = false;
+      if (batchDoseG > 82.5) {
+        batchCapWarning = true;
+        batchDoseG = 82.5;
+        batchRatio = Number((state.batchVol / 82.5).toFixed(1));
+      } else {
+        batchDoseG = Number(batchDoseG.toFixed(1));
+      }
+
+      const activeVol = state.dripMode === 'single' ? state.singleVol : state.batchVol;
+      const activeDoseG = state.dripMode === 'single' ? singleDoseG : batchDoseG;
+      const activeRatio = state.dripMode === 'single' ? finalRatioRaw : batchRatio;
+      const bloomWaterMl = Math.round(activeDoseG * finalBloomRatio);
+
+      const stepDown = (b.roast === 'medium' || b.roast === 'medium_dark' || b.roast === 'dark' || b.origin === 'italian') && !ov;
+      const singlePulseTemps = [];
+      for (let i = 0; i < finalSinglePulses; i++) {
+        const drop = stepDown && i === finalSinglePulses - 1 && finalSinglePulses > 1 ? 2 : 0;
+        const userDelta = (off.singlePulseTempDeltas && off.singlePulseTempDeltas[i]) || 0;
+        singlePulseTemps.push(clamp(finalTempC - drop + userDelta, 80, 99));
+      }
+
+      const batchBaseTempC = clamp(finalTempC - 1, 80, 99);
+      const batchPulseTemps = [];
+      for (let i = 0; i < finalBatchPulses; i++) {
+        const drop = stepDown && i === finalBatchPulses - 1 && finalBatchPulses > 1 ? 1 : 0;
+        const userDelta = (off.batchPulseTempDeltas && off.batchPulseTempDeltas[i]) || 0;
+        batchPulseTemps.push(clamp(batchBaseTempC - drop + userDelta, 80, 99));
+      }
+
+      const activeOdeIdx = clamp(
+        (state.dripMode === 'single' ? baseOdeSingleIdx : baseOdeBatchIdx) + off.odeSteps,
+        0,
+        30
+      );
+      const odeParts = odeIndexToParts(activeOdeIdx);
+
+      const activePulses = state.dripMode === 'single' ? finalSinglePulses : finalBatchPulses;
+      const activePause = state.dripMode === 'single' ? finalSinglePause : finalBatchPause;
+      const estSeconds = finalBloomTime + activePulses * 26 + Math.max(0, activePulses - 1) * activePause + (state.dripMode === 'batch' ? 45 : 20);
+
+      return {
+        activeVol,
+        doseG: activeDoseG,
+        ratio: activeRatio,
+        singleVol: state.singleVol,
+        singleDoseG,
+        batchVol: state.batchVol,
+        batchDoseG,
+        batchRatio,
+        capWarning: state.dripMode === 'batch' && batchCapWarning,
+        brewTempC: state.dripMode === 'single' ? finalTempC : batchBaseTempC,
+        bloomRatio: finalBloomRatio,
+        bloomWaterMl,
+        bloomTime: finalBloomTime,
+        bloomTempC: finalBloomTempC,
+        single: { pulses: finalSinglePulses, pause: finalSinglePause, tempsC: singlePulseTemps },
+        batch: { pulses: finalBatchPulses, pause: finalBatchPause, tempsC: batchPulseTemps },
+        odeIdx: activeOdeIdx,
+        odeParts,
+        estSeconds,
+        offsets: off
+      };
+    }
+
+    function computeMerakiRecipe() {
+      const b = state.bean;
+      const drink = DRINK_TYPES.find(d => d.id === state.drinkType) || DRINK_TYPES[0];
+
+      // Barista baselines
+      let baseBrewTempC = { light: 94, light_medium: 93, medium: 93, medium_dark: 92, dark: 90 }[b.roast] || 93;
+      let baseRatio = { light: 2.3, light_medium: 2.15, medium: 2.0, medium_dark: 1.9, dark: 1.75 }[b.roast] || 2.0;
+      let baseGrind = { light: 12, light_medium: 13, medium: 15, medium_dark: 16, dark: 18 }[b.roast] || 15;
+
+      // Group head temp index (0:86F, 1:104F, 2:122F, 3:140F, 4:158F)
+      let baseGroupIdx = { light: 4, light_medium: 3, medium: 3, medium_dark: 2, dark: 2 }[b.roast] ?? 3;
+
+      // Pre-infusion: ON for light/light-med/medium (or fresh beans), OFF for dark/Italian by default
+      let basePreInfOn = b.roast !== 'dark';
+      let basePreInfBar = (b.roast === 'light' || b.roast === 'light_medium') ? 3 : 4;
+      let basePreInfTime = { light: 10, light_medium: 8, medium: 6, medium_dark: 5, dark: 5 }[b.roast] || 6;
+
+      if (b.origin === 'africa') {
+        baseGrind -= 1;
+        basePreInfTime = clamp(basePreInfTime + 2, 5, 15);
+      } else if (b.origin === 'italian') {
+        baseBrewTempC = Math.min(baseBrewTempC, 92);
+        baseGroupIdx = Math.min(baseGroupIdx, 2);
+        basePreInfTime = 5;
+        basePreInfBar = 4;
+      }
+      if (b.process === 'natural' || b.process === 'anaerobic') {
+        baseBrewTempC -= 1;
+        baseGrind += 1;
+      }
+      if (b.freshness === 'fresh') {
+        baseGrind += 1;
+        basePreInfOn = true;
+        basePreInfTime = clamp(basePreInfTime + 2, 5, 15);
+      } else if (b.freshness === 'bulk') {
+        baseGrind -= 1;
+      }
+
+      const off = state.offsets.espresso;
+      const grindWeightG = clamp(Number((drink.doseDefault + off.dose).toFixed(1)), 14.0, 22.0);
+      const baseBrewWeight = Math.round(grindWeightG * (baseRatio + drink.ratioDelta));
+      const brewWeightG = clamp(Math.round(baseBrewWeight + off.brewWeightDelta), 20, 70);
+      const effectiveRatio = Number((brewWeightG / grindWeightG).toFixed(2));
+      const grindDial = clamp(Math.round(baseGrind + off.grindSteps), 1, 45);
+      const brewTempC = clamp(Math.round(baseBrewTempC + off.brewTempC), 85, 97);
+
+      const groupTempIdx = off.groupTempIdxOverride !== null ? clamp(off.groupTempIdxOverride, 0, 4) : baseGroupIdx;
+      const groupTempF = MERAKI_GROUP_TEMPS_F[groupTempIdx];
+
+      const preInfusionOn = off.preInfusionOnOverride !== null ? off.preInfusionOnOverride : basePreInfOn;
+      const preInfusionBar = off.preInfusionBarOverride !== null ? off.preInfusionBarOverride : basePreInfBar;
+      const preInfusionTime = clamp(Math.round(basePreInfTime + off.preInfusionTimeDelta), 5, 15);
+
+      const milk = MILK_TYPES.find(mt => mt.id === state.milkType) || MILK_TYPES[0];
+      let baseSteamLevel = drink.steamLevel;
+      if (milk.forceMediumAll) baseSteamLevel = 'medium';
+      else if (milk.forceMediumExceptCap && drink.id !== 'cappuccino') baseSteamLevel = 'medium';
+
+      const baseMilkTempF = drink.isMilk ? clamp(drink.milkTempF + milk.tempOffsetF, 124, 155) : 0;
+      const steamLevel = off.steamLevelOverride !== null ? off.steamLevelOverride : baseSteamLevel;
+      const milkTempF = drink.isMilk ? clamp(baseMilkTempF + off.milkTempFDelta, 120, 160) : 0;
+
+      return {
+        drink,
+        milk,
+        grindDial,
+        grindWeightG,
+        brewWeightG,
+        effectiveRatio,
+        brewTempC,
+        groupTempIdx,
+        groupTempF,
+        preInfusionOn,
+        preInfusionBar,
+        preInfusionTime,
+        isMilk: drink.isMilk,
+        steamLevel,
+        milkTempF,
+        offsets: off
+      };
+    }
+
+    // =========================================================================
+    // 4. SUBJECTIVE TASTE CALIBRATION ENGINE
+    // =========================================================================
+    function buildCalibrationPlan() {
+      const syms = Array.from(state.selectedSymptoms);
+      if (syms.length === 0) return null;
+
+      const steps = [];
+      const delta = state.activeTab === 'drip'
+        ? { odeSteps: 0, tempC: 0, ratio: 0, bloomTime: 0, singlePulses: 0, batchPulses: 0 }
+        : { grindSteps: 0, brewTempC: 0, brewWeightDelta: 0, preInfusionTimeDelta: 0, dose: 0, forcePreInfOn: false };
+
+      if (state.activeTab === 'drip') {
+        if (syms.includes('slow')) {
+          delta.odeSteps += 2;
+          steps.push({ priority: 1, action: 'Step Ode Gen 2 +2 clicks coarser', why: 'Opens the coffee bed to prevent basket backup and channeling.' });
+        }
+        if (syms.includes('fast')) {
+          delta.odeSteps -= 2;
+          steps.push({ priority: 1, action: 'Step Ode Gen 2 −2 clicks finer', why: 'Increases bed resistance so water extracts sweetness instead of rushing through.' });
+        }
+        if (syms.includes('sour')) {
+          if (!syms.includes('fast')) delta.odeSteps -= 1;
+          delta.tempC += 2;
+          delta.bloomTime += 5;
+          steps.push({ priority: 2, action: 'Go 1 click finer + raise brew temp +2°C (+5s bloom)', why: 'Fixes under-extraction by pulling deeper sweetness.' });
+        }
+        if (syms.includes('bitter') || syms.includes('dry')) {
+          if (!syms.includes('slow')) delta.odeSteps += 1;
+          delta.tempC -= 2;
+          if (state.dripMode === 'single') delta.singlePulses -= 1;
+          else delta.batchPulses -= 1;
+          steps.push({ priority: 2, action: 'Go 1 click coarser + drop temp −2°C (−1 pulse)', why: 'Curbs over-extraction and astringent agitation.' });
+        }
+        if (syms.includes('weak')) {
+          delta.ratio -= 0.8;
+          steps.push({ priority: 3, action: 'Tighten Coffee:Water ratio (−0.8)', why: 'Boosts body and strength cleanly.' });
+        }
+        if (syms.includes('strong')) {
+          delta.ratio += 0.8;
+          steps.push({ priority: 3, action: 'Widen Coffee:Water ratio (+0.8)', why: 'Opens up aromatics and lightens a heavy cup.' });
+        }
+      } else {
+        // Strictly adjusts user's controllable Meraki Gen 2 settings
+        if (syms.includes('fast')) {
+          delta.grindSteps -= 2;
+          steps.push({ priority: 1, action: 'Step Meraki Grind 2 clicks finer', why: 'Slows flow to restore proper puck resistance and crema.' });
+        }
+        if (syms.includes('slow')) {
+          delta.grindSteps += 2;
+          steps.push({ priority: 1, action: 'Step Meraki Grind 2 clicks coarser', why: 'Relieves choked flow and prevents harsh roast bitterness.' });
+        }
+        if (syms.includes('sour')) {
+          if (!syms.includes('fast')) delta.grindSteps -= 1;
+          delta.brewWeightDelta += 3;
+          delta.brewTempC += 1;
+          delta.preInfusionTimeDelta += 2;
+          delta.forcePreInfOn = true;
+          steps.push({ priority: 2, action: 'Increase Brew Weight +3 g, Brew Temp +1°C & Pre-Infusion +2 s', why: 'Extends extraction to round out sharp sourness.' });
+        }
+        if (syms.includes('bitter')) {
+          if (!syms.includes('slow')) delta.grindSteps += 1;
+          delta.brewWeightDelta -= 3;
+          delta.brewTempC -= 1;
+          steps.push({ priority: 2, action: 'Lower Brew Weight −3 g & drop Brew Temp −1°C', why: 'Cuts off the bitter tail before harsh compounds extract.' });
+        }
+        if (syms.includes('weak') || syms.includes('lost_in_milk')) {
+          delta.dose += 0.5;
+          delta.brewWeightDelta -= 2;
+          steps.push({ priority: 3, action: 'Increase Grind Weight +0.5 g & lower Brew Weight −2 g', why: 'Creates a punchier shot that stands up to milk or ice.' });
+        }
+        if (syms.includes('strong')) {
+          delta.brewWeightDelta += 4;
+          steps.push({ priority: 3, action: 'Increase Brew Weight +4 g', why: 'Smooths out an overly syrupy shot.' });
+        }
+        if (syms.includes('thin_crema')) {
+          if (!syms.includes('fast')) delta.grindSteps -= 1;
+          delta.preInfusionTimeDelta -= 1;
+          steps.push({ priority: 2, action: 'Step Grind 1 click finer & shorten Pre-Infusion −1 s', why: 'Tighter puck resistance preserves emulsified oils and crema.' });
+        }
+      }
+
+      steps.sort((a, b) => a.priority - b.priority);
+      return { steps, delta };
+    }
+
+    // =========================================================================
+    // 5. FINE-TUNING MUTATORS
+    // =========================================================================
+    function adjustDripField(field, dir, pulseIdx) {
+      const off = state.offsets.drip;
+      if (field === 'ode') off.odeSteps = clamp(off.odeSteps + dir, -12, 12);
+      else if (field === 'tempC') off.tempC = clamp(off.tempC + dir, -10, 10);
+      else if (field === 'ratio') off.ratio = Number(clamp(off.ratio + dir * 0.2, -3.5, 3.5).toFixed(1));
+      else if (field === 'bloomRatio') off.bloomRatio = Number(clamp(off.bloomRatio + dir * 0.5, -1.0, 1.5).toFixed(1));
+      else if (field === 'bloomTime') off.bloomTime = clamp(off.bloomTime + dir * 5, -20, 30);
+      else if (field === 'bloomTempC') off.bloomTempC = clamp(off.bloomTempC + dir, -8, 8);
+      else if (field === 'singlePulses') off.singlePulses = clamp(off.singlePulses + dir, -2, 2);
+      else if (field === 'singlePause') off.singlePause = clamp(off.singlePause + dir * 2, -15, 20);
+      else if (field === 'singlePulseTemp') {
+        off.singlePulseTempDeltas[pulseIdx] = clamp((off.singlePulseTempDeltas[pulseIdx] || 0) + dir, -8, 8);
+      } else if (field === 'batchPulses') off.batchPulses = clamp(off.batchPulses + dir, -1, 2);
+      else if (field === 'batchPause') off.batchPause = clamp(off.batchPause + dir * 2, -15, 20);
+      else if (field === 'batchPulseTemp') {
+        off.batchPulseTempDeltas[pulseIdx] = clamp((off.batchPulseTempDeltas[pulseIdx] || 0) + dir, -8, 8);
+      }
+      off.count += 1;
+      renderAll();
+    }
+
+    function adjustMerakiField(field, val) {
+      const off = state.offsets.espresso;
+      const cur = computeMerakiRecipe();
+      if (field === 'grind') off.grindSteps = clamp(off.grindSteps + val, -15, 15);
+      else if (field === 'dose') off.dose = Number(clamp(off.dose + val * 0.2, -3.0, 3.0).toFixed(1));
+      else if (field === 'brewWeight') off.brewWeightDelta = clamp(off.brewWeightDelta + val, -18, 25);
+      else if (field === 'brewTempC') off.brewTempC = clamp(off.brewTempC + val, -6, 6);
+      else if (field === 'groupTempIdx') off.groupTempIdxOverride = clamp(val, 0, 4);
+      else if (field === 'preInfusionOn') off.preInfusionOnOverride = Boolean(val);
+      else if (field === 'preInfusionBar') off.preInfusionBarOverride = val === 3 ? 3 : 4;
+      else if (field === 'preInfusionTime') {
+        const next = clamp(cur.preInfusionTime + val, 5, 15);
+        off.preInfusionTimeDelta += (next - cur.preInfusionTime);
+      }
+      else if (field === 'steamLevel') off.steamLevelOverride = val === 'strong' ? 'strong' : 'medium';
+      else if (field === 'milkTempF') off.milkTempFDelta = clamp(off.milkTempFDelta + val * 2, -16, 16);
+      off.count += 1;
+      renderAll();
+    }
+
+    // =========================================================================
+    // 6. SMART BAG-TEXT PARSER
+    // =========================================================================
+    function parseBagText(rawText) {
+      const txt = (rawText || '').trim();
+      if (!txt) return null;
+      const lower = txt.toLowerCase();
+      const detected = [];
+
+      let roast = state.bean.roast;
+      if (/\b(light[\s-]*med(ium)?|med[\s-]*light)\b/.test(lower)) {
+        roast = 'light_medium'; detected.push('Roast: Light-Med');
+      } else if (/\b(med(ium)?[\s-]*dark|full[\s-]*city|vienna)\b/.test(lower)) {
+        roast = 'medium_dark'; detected.push('Roast: Med-Dark');
+      } else if (/\b(dark|french|italian\s*roast|espresso\s*roast)\b/.test(lower)) {
+        roast = 'dark'; detected.push('Roast: Dark');
+      } else if (/\b(light|nordic|cinnamon|omni|filter\s*roast)\b/.test(lower)) {
+        roast = 'light'; detected.push('Roast: Light');
+      } else if (/\b(medium|city)\b/.test(lower)) {
+        roast = 'medium'; detected.push('Roast: Medium');
+      } else if (/\b(jasmine|bergamot|peach|blueberry|floral|hibiscus|black\s*tea|citrus|apricot|stone\s*fruit)\b/.test(lower)) {
+        roast = 'light_medium'; detected.push('Roast: Light-Med (inferred)');
+      } else if (/\b(smoky|molasses|dark\s*chocolate|bold|intense|bittersweet|burnt)\b/.test(lower)) {
+        roast = 'medium_dark'; detected.push('Roast: Med-Dark (inferred)');
+      } else if (/\b(caramel|milk\s*chocolate|hazelnut|almond|toffee|nutty)\b/.test(lower)) {
+        roast = 'medium'; detected.push('Roast: Medium (inferred)');
+      }
+
+      let process = state.bean.process;
+      if (/washed\s*[+&/]\s*natural|natural\s*[+&/]\s*washed/.test(lower)) {
+        process = 'washed_natural'; detected.push('Process: Washed+Natural');
+      } else if (/\b(anaerobic|carbonic|thermal\s*shock|koji|experimental|yeast)\b/.test(lower)) {
+        process = 'anaerobic'; detected.push('Process: Anaerobic');
+      } else if (/\b(honey|pulped\s*natural)\b/.test(lower)) {
+        process = 'honey'; detected.push('Process: Honey');
+      } else if (/\b(natural|dry\s*process|sun[-\s]*dried)\b/.test(lower)) {
+        process = 'natural'; detected.push('Process: Natural');
+      } else if (/\b(washed|wet\s*process)\b/.test(lower)) {
+        process = 'washed'; detected.push('Process: Washed');
+      }
+
+      let origin = state.bean.origin;
+      const elevMatch = lower.match(/(\d[,.]?\d{3})\s*m\b/);
+      const elevNum = elevMatch ? Number(elevMatch[1].replace(/[,.]/g, '')) : 0;
+
+      if (/\b(ethiopia|kenya|rwanda|burundi|yirgacheffe|guji|sidama|nyeri|gesha|geisha)\b/.test(lower) || elevNum >= 1850) {
+        origin = 'africa'; detected.push('Origin: High-Elev. Africa');
+      } else if (/\b(lavazza|illy|italian|robusta|super\s*crema|napoli|torino|espresso\s*blend)\b/.test(lower)) {
+        origin = 'italian'; detected.push('Origin: Italian Blend');
+      } else if (/\b(sumatra|indonesia|java|sulawesi|papua|timor|vietnam|india|monsooned)\b/.test(lower)) {
+        origin = 'asia'; detected.push('Origin: Asia-Pacific');
+      } else if (/\b(colombia|brazil|guatemala|costa\s*rica|mexico|peru|bolivia|honduras|el\s*salvador|nicaragua|panama|oaxaca|huila|antioquia)\b/.test(lower)) {
+        origin = 'americas'; detected.push('Origin: Americas');
+      }
+
+      let freshness = state.bean.freshness;
+      if (/\b(costco|kirkland|wholesale|best\s*by|grocery|supermarket)\b/.test(lower)) {
+        freshness = 'bulk'; detected.push('Storage: Bulk');
+      } else if (/\b(frozen|thawed)\b/.test(lower)) {
+        freshness = 'frozen'; detected.push('Storage: Frozen');
+      } else if (/\b(fresh|just\s*roasted|roasted\s*today)\b/.test(lower)) {
+        freshness = 'fresh'; detected.push('Freshness: 4–14d');
+      }
+
+      const firstLine = txt.split(/\n|—|–|\|/)[0].trim();
+      let beanName = state.bean.name;
+      if (!beanName || state.bean.presetId) {
+        beanName = firstLine.length > 48 ? firstLine.slice(0, 48).trim() : firstLine;
+      }
+
+      state.bean = { presetId: null, name: beanName, roast, process, origin, freshness };
+      resetAllOffsets();
+      syncBeanInputs();
+      renderAll();
+      return detected;
+    }
+
+    // =========================================================================
+    // 6B. LIVE GEMINI AI BARISTA CLIENT (WITH AUTOMATIC OFFLINE FALLBACK)
+    // =========================================================================
+    async function callGeminiJson(parts) {
+      const key = (state.ai.apiKey || '').trim();
+      if (!key) throw new Error('NO_KEY');
+      const model = state.ai.model || 'gemini-2.5-flash';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts }],
+          generationConfig: {
+            temperature: 0.2,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+      if (!res.ok) {
+        const errTxt = await res.text().catch(() => '');
+        throw new Error(`Gemini API ${res.status}: ${errTxt.slice(0, 120)}`);
+      }
+      const data = await res.json();
+      const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleaned = raw.replace(/^```json\s*/i, '').replace(/```$/i, '').trim();
+      return JSON.parse(cleaned);
+    }
+
+    async function runGeminiBeanAnalysis({ text, imageBase64, imageMime }) {
+      const prompt = `You are a world-class specialty barista and coffee roaster expert specializing in the Fellow Ode Gen 2 (31 stepped positions, 0..30), Fellow Aiden Precision Coffee Maker, and Meraki Gen 2 Espresso Machine.
+Analyze the provided coffee bean description and/or coffee bag image. Identify the bean accurately and return ONLY valid JSON with these exact keys:
+{
+  "beanName": "Clean Roaster + Coffee Name",
+  "roast": "light" | "light_medium" | "medium" | "medium_dark" | "dark",
+  "process": "washed" | "natural" | "honey" | "washed_natural" | "anaerobic",
+  "origin": "americas" | "africa" | "asia" | "italian",
+  "freshness": "fresh" | "peak" | "bulk" | "frozen",
+  "baristaNote": "1 concise sentence on flavor profile & dialing tip",
+  "merakiGrindOffset": integer (-3 to +3 fine-tune vs roast baseline),
+  "aidenTempOffsetC": integer (-3 to +3 fine-tune vs roast baseline)
+}
+User text: ${text || '(analyze image)'}`;
+
+      const parts = [{ text: prompt }];
+      if (imageBase64 && imageMime) {
+        parts.push({ inline_data: { mime_type: imageMime, data: imageBase64 } });
+      }
+      const json = await callGeminiJson(parts);
+      const validRoasts = ['light', 'light_medium', 'medium', 'medium_dark', 'dark'];
+      const validProcs = ['washed', 'natural', 'honey', 'washed_natural', 'anaerobic'];
+      const validOrigins = ['americas', 'africa', 'asia', 'italian'];
+      const validFresh = ['fresh', 'peak', 'bulk', 'frozen'];
+
+      state.bean = {
+        presetId: null,
+        name: (json.beanName || text || 'Custom Coffee Bean').slice(0, 64),
+        roast: validRoasts.includes(json.roast) ? json.roast : 'medium',
+        process: validProcs.includes(json.process) ? json.process : 'washed',
+        origin: validOrigins.includes(json.origin) ? json.origin : 'americas',
+        freshness: validFresh.includes(json.freshness) ? json.freshness : 'peak'
+      };
+      resetAllOffsets();
+      if (Number.isFinite(Number(json.aidenTempOffsetC))) {
+        state.offsets.drip.tempC = clamp(Math.round(Number(json.aidenTempOffsetC)), -3, 3);
+      }
+      if (Number.isFinite(Number(json.merakiGrindOffset))) {
+        state.offsets.espresso.grindSteps = clamp(Math.round(Number(json.merakiGrindOffset)), -3, 3);
+      }
+      state.ai.lastBeanNote = json.baristaNote || '';
+      syncBeanInputs();
+      renderAll();
+      return json;
+    }
+
+    async function runGeminiTasteCoach(freeformText) {
+      const modeKey = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+      const beanDesc = `${state.bean.name} (${state.bean.roast}, ${state.bean.process}, ${state.bean.origin})`;
+      let currentContext = '';
+      let schemaPrompt = '';
+
+      if (modeKey === 'drip') {
+        const r = computeAidenRecipe();
+        currentContext = `Fellow Ode Gen 2: ${r.odeParts.fullLabel} | Fellow Aiden (${state.dripMode}): ${r.activeVol}mL water, ${r.doseG}g beans (1:${r.ratio}), Brew Temp ${r.brewTempC}C, Bloom ${r.bloomTime}s, Pulses: ${state.dripMode === 'single' ? r.single.pulses : r.batch.pulses}`;
+        schemaPrompt = `{
+  "diagnosis": "1 short barista sentence explaining why it tasted this way",
+  "steps": [{"action": "Short concrete change", "why": "Short reason"}],
+  "delta": { "odeSteps": int(-3..3), "tempC": int(-4..4), "ratio": number(-1.2..1.2), "bloomTime": int(-10..10), "singlePulses": int(-1..1), "batchPulses": int(-1..1) }
+}`;
+      } else {
+        const m = computeMerakiRecipe();
+        currentContext = `Meraki Gen 2 (${m.drink.name}): Grind Dial ${m.grindDial}, Grind Weight ${m.grindWeightG}g, Brew Weight ${m.brewWeightG}g, Brew Temp ${m.brewTempC}C, Group Head ${m.groupTempF}F, Pre-Infusion ${m.preInfusionOn ? 'ON ' + m.preInfusionBar + 'bar ' + m.preInfusionTime + 's' : 'OFF'}${m.isMilk ? ', Milk: ' + m.milk.name + ' (' + m.steamLevel + ' steam, ' + m.milkTempF + 'F)' : ''}`;
+        schemaPrompt = `{
+  "diagnosis": "1 short barista sentence explaining why it tasted this way",
+  "steps": [{"action": "Short concrete change using ONLY Meraki's adjustable settings", "why": "Short reason"}],
+  "delta": { "grindSteps": int(-3..3), "dose": number(-1.0..1.0), "brewWeightDelta": int(-6..6), "brewTempC": int(-3..3), "preInfusionTimeDelta": int(-4..4), "forcePreInfOn": boolean }
+}`;
+      }
+
+      const prompt = `You are a professional specialty barista calibrating a home machine.
+Bean: ${beanDesc}
+Current Setup: ${currentContext}
+User Tasting Feedback: "${freeformText}"
+Return ONLY valid JSON matching this schema:
+${schemaPrompt}`;
+
+      const json = await callGeminiJson([{ text: prompt }]);
+      const steps = Array.isArray(json.steps) ? json.steps.slice(0, 3) : [];
+      const d = json.delta || {};
+      const delta = modeKey === 'drip'
+        ? {
+            odeSteps: clamp(Math.round(Number(d.odeSteps) || 0), -4, 4),
+            tempC: clamp(Math.round(Number(d.tempC) || 0), -4, 4),
+            ratio: clamp(Number(d.ratio) || 0, -1.5, 1.5),
+            bloomTime: clamp(Math.round(Number(d.bloomTime) || 0), -10, 15),
+            singlePulses: clamp(Math.round(Number(d.singlePulses) || 0), -1, 1),
+            batchPulses: clamp(Math.round(Number(d.batchPulses) || 0), -1, 1)
+          }
+        : {
+            grindSteps: clamp(Math.round(Number(d.grindSteps) || 0), -4, 4),
+            dose: clamp(Number(d.dose) || 0, -1.0, 1.0),
+            brewWeightDelta: clamp(Math.round(Number(d.brewWeightDelta) || 0), -8, 8),
+            brewTempC: clamp(Math.round(Number(d.brewTempC) || 0), -3, 3),
+            preInfusionTimeDelta: clamp(Math.round(Number(d.preInfusionTimeDelta) || 0), -4, 4),
+            forcePreInfOn: Boolean(d.forcePreInfOn)
+          };
+
+      state.ai.customPlan = {
+        mode: modeKey,
+        diagnosis: json.diagnosis || 'Gemini Barista diagnosis ready.',
+        steps,
+        delta
+      };
+      renderTasteCoach();
+    }
+
+    function mapFreeformTasteLocally(text) {
+      const t = text.toLowerCase();
+      state.selectedSymptoms.clear();
+      if (/sour|acid|sharp|lemon|vinegar|under/.test(t)) state.selectedSymptoms.add('sour');
+      if (/bitter|burnt|ash|harsh|char|over/.test(t)) state.selectedSymptoms.add('bitter');
+      if (/weak|watery|thin|hollow|papery|dilut/.test(t)) state.selectedSymptoms.add('weak');
+      if (/strong|muddy|heavy|syrup|intense/.test(t)) state.selectedSymptoms.add('strong');
+      if (/dry|astring|chalk/.test(t)) state.selectedSymptoms.add(state.activeTab === 'drip' ? 'dry' : 'bitter');
+      if (/fast|gush|channel|quick|under 2/.test(t)) state.selectedSymptoms.add('fast');
+      if (/slow|chok|stall|back|overflow|over 3/.test(t)) state.selectedSymptoms.add('slow');
+      if (/crema/.test(t) && state.activeTab === 'espresso') state.selectedSymptoms.add('thin_crema');
+      if (/milk|latte|ice/.test(t) && state.activeTab === 'espresso') state.selectedSymptoms.add('lost_in_milk');
+    }
+
+    // =========================================================================
+    // 7. RENDERING FUNCTIONS
+    // =========================================================================
+    function renderPresets() {
+      const container = document.getElementById('preset-buttons');
+      const all = getAllPresets();
+      container.innerHTML = all.map(p => {
+        const active = state.bean.presetId === p.id;
+        return `<button type="button" data-preset="${escapeHtml(p.id)}" class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+          active
+            ? 'bg-[#141414] text-white border-[#141414]'
+            : 'bg-[#f7f6f3] text-[#141414] border-[#e6e4de] hover:border-[#141414]'
+        }">${escapeHtml(p.name.split(' (')[0])}</button>`;
+      }).join('');
+
+      container.querySelectorAll('button[data-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = getAllPresets().find(x => x.id === btn.dataset.preset);
+          if (!p) return;
+          state.bean = { presetId: p.id, name: p.name, roast: p.roast, process: p.process, origin: p.origin, freshness: p.freshness };
+          if (p.overrideAiden && p.overrideAiden.singleVol) state.singleVol = p.overrideAiden.singleVol;
+          resetAllOffsets();
+          syncBeanInputs();
+          renderAll();
+          showToast(`Loaded ${p.name}`);
+        });
+      });
+    }
+
+    function renderRoastSelector() {
+      const container = document.getElementById('roast-selector');
+      const current = ROAST_LEVELS.find(r => r.id === state.bean.roast) || ROAST_LEVELS[2];
+      document.getElementById('roast-label-pill').textContent = current.label;
+
+      container.innerHTML = ROAST_LEVELS.map(r => {
+        const active = r.id === state.bean.roast;
+        return `<button type="button" data-roast="${r.id}" class="flex flex-col items-center justify-center py-2 px-1 rounded-2xl border text-[11px] font-medium transition ${
+          active
+            ? 'border-[#141414] bg-[#f7f6f3] text-[#141414] ring-1 ring-[#141414]'
+            : 'border-[#e6e4de] bg-white text-[#6e6c67] hover:border-[#b8b5ad]'
+        }">
+          <span class="w-4 h-4 rounded-full mb-1 border border-black/15" style="background:${r.color}"></span>
+          <span>${r.short}</span>
+        </button>`;
+      }).join('');
+
+      container.querySelectorAll('button[data-roast]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.bean.roast = btn.dataset.roast;
+          state.bean.presetId = null;
+          renderAll();
+        });
+      });
+    }
+
+    function syncBeanInputs() {
+      document.getElementById('input-bean-name').value = state.bean.name;
+      document.getElementById('select-process').value = state.bean.process;
+      document.getElementById('select-origin').value = state.bean.origin;
+      document.getElementById('select-freshness').value = state.bean.freshness;
+    }
+
+    function renderTasteCoach() {
+      const modeKey = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+      const list = TASTE_SYMPTOMS[modeKey];
+      const chipsEl = document.getElementById('taste-chips');
+
+      chipsEl.innerHTML = list.map(s => {
+        const active = state.selectedSymptoms.has(s.id);
+        return `<button type="button" data-symptom="${s.id}" class="px-3 py-1.5 rounded-full text-xs font-medium border transition ${
+          active
+            ? 'bg-[#141414] text-white border-[#141414]'
+            : 'bg-[#f7f6f3] text-[#141414] border-[#e6e4de] hover:border-[#141414]'
+        }">${s.label}</button>`;
+      }).join('');
+
+      chipsEl.querySelectorAll('button[data-symptom]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.dataset.symptom;
+          state.ai.customPlan = null;
+          if (state.selectedSymptoms.has(id)) state.selectedSymptoms.delete(id);
+          else state.selectedSymptoms.add(id);
+          renderTasteCoach();
+        });
+      });
+
+      const aiPlan = state.ai.customPlan && state.ai.customPlan.mode === modeKey ? state.ai.customPlan : null;
+      const plan = aiPlan || buildCalibrationPlan();
+      const outputEl = document.getElementById('calibration-output');
+      const actionsEl = document.getElementById('calibration-actions');
+
+      if (!plan || plan.steps.length === 0) {
+        outputEl.innerHTML = `<p class="text-xs text-[#6e6c67]">Tap a taste pill or describe your cup above to calibrate your <strong>${modeKey === 'drip' ? 'Fellow Aiden + Ode 2' : 'Meraki Gen 2'}</strong> recipe.</p>`;
+        actionsEl.classList.add('hidden');
+      } else {
+        outputEl.innerHTML = `
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <p class="fellow-label">${aiPlan ? 'Gemini AI Barista Plan' : 'Recommended Adjustments'}</p>
+            ${aiPlan ? `<span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#141414] text-white">Live AI</span>` : ''}
+          </div>
+          ${aiPlan && aiPlan.diagnosis ? `<p class="text-xs text-[#141414] font-medium mb-2.5 pb-2 border-b border-[#e6e4de]">${escapeHtml(aiPlan.diagnosis)}</p>` : ''}
+          <ol class="space-y-2">
+            ${plan.steps.map((st, idx) => `
+              <li class="flex items-start gap-2 text-xs">
+                <span class="w-4 h-4 rounded-full bg-[#141414] text-white font-mono-num text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">${idx + 1}</span>
+                <div>
+                  <p class="font-semibold text-[#141414]">${escapeHtml(st.action)}</p>
+                  <p class="text-[#6e6c67] leading-snug">${escapeHtml(st.why)}</p>
+                </div>
+              </li>
+            `).join('')}
+          </ol>
+        `;
+        actionsEl.classList.remove('hidden');
+      }
+
+      const off = state.offsets[modeKey];
+      const banner = document.getElementById('active-offsets-banner');
+      const resetBtn = document.getElementById('btn-reset-calibration');
+      if (off.count > 0) {
+        banner.classList.remove('hidden');
+        resetBtn.classList.remove('hidden');
+        document.getElementById('calibration-step-count').textContent = `Tuned (${off.count})`;
+        const parts = [];
+        if (modeKey === 'drip') {
+          if (off.odeSteps) parts.push(`Ode ${off.odeSteps > 0 ? '+' : ''}${off.odeSteps} clk`);
+          if (off.tempC) parts.push(`Temp ${off.tempC > 0 ? '+' : ''}${off.tempC}°C`);
+          if (off.ratio) parts.push(`Ratio ${off.ratio > 0 ? '+' : ''}${off.ratio.toFixed(1)}`);
+          if (off.bloomTime) parts.push(`Bloom ${off.bloomTime > 0 ? '+' : ''}${off.bloomTime}s`);
+        } else {
+          if (off.grindSteps) parts.push(`Grind ${off.grindSteps > 0 ? '+' : ''}${off.grindSteps}`);
+          if (off.dose) parts.push(`Dose ${off.dose > 0 ? '+' : ''}${off.dose.toFixed(1)}g`);
+          if (off.brewWeightDelta) parts.push(`Yield ${off.brewWeightDelta > 0 ? '+' : ''}${off.brewWeightDelta}g`);
+          if (off.brewTempC) parts.push(`Temp ${off.brewTempC > 0 ? '+' : ''}${off.brewTempC}°C`);
+        }
+        document.getElementById('active-offsets-text').textContent = parts.length ? parts.join(' • ') : 'Manual fine-tuning active';
+      } else {
+        banner.classList.add('hidden');
+        resetBtn.classList.add('hidden');
+      }
+    }
+
+    function renderDripPanel() {
+      const r = computeAidenRecipe();
+      document.getElementById('drip-bean-heading').textContent = state.bean.name.trim() || 'Custom Coffee Bean';
+
+      // Green & Blue Basket Cards
+      document.getElementById('green-card-water').textContent = `${r.singleVol} mL`;
+      document.getElementById('green-card-beans').textContent = `${r.singleDoseG} g beans`;
+      document.getElementById('blue-card-water').textContent = `${r.batchVol.toLocaleString()} mL`;
+      document.getElementById('blue-card-beans').textContent = `${r.batchDoseG} g beans`;
+
+      const btnSingle = document.getElementById('btn-aiden-single');
+      const btnBatch = document.getElementById('btn-aiden-batch');
+      const volBox = document.getElementById('aiden-vol-box');
+      const slider = document.getElementById('slider-aiden-vol');
+      const doseInline = document.getElementById('aiden-dose-inline');
+
+      if (state.dripMode === 'single') {
+        btnSingle.className = 'text-left rounded-2xl p-4 border-2 border-[#167956] bg-[#167956]/[0.05] transition';
+        btnBatch.className = 'text-left rounded-2xl p-4 border border-[#e6e4de] bg-[#faf9f7] hover:border-[#1e5ed6]/50 transition';
+        volBox.className = 'rounded-2xl border border-[#167956]/25 bg-[#167956]/[0.04] p-4 transition';
+        slider.className = 'w-full cursor-pointer accent-green';
+        slider.min = 150; slider.max = 450; slider.step = 25; slider.value = state.singleVol;
+        document.getElementById('aiden-vol-label').textContent = 'Green Single-Serve Volume';
+        document.getElementById('aiden-vol-min').textContent = '150 mL';
+        document.getElementById('aiden-vol-mid').textContent = '300 mL';
+        document.getElementById('aiden-vol-max').textContent = '450 mL';
+        doseInline.className = 'font-mono-num text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#167956] text-white';
+      } else {
+        btnBatch.className = 'text-left rounded-2xl p-4 border-2 border-[#1e5ed6] bg-[#1e5ed6]/[0.05] transition';
+        btnSingle.className = 'text-left rounded-2xl p-4 border border-[#e6e4de] bg-[#faf9f7] hover:border-[#167956]/50 transition';
+        volBox.className = 'rounded-2xl border border-[#1e5ed6]/25 bg-[#1e5ed6]/[0.04] p-4 transition';
+        slider.className = 'w-full cursor-pointer accent-blue';
+        slider.min = 450; slider.max = 1500; slider.step = 25; slider.value = state.batchVol;
+        document.getElementById('aiden-vol-label').textContent = 'Blue Batch Brew Volume';
+        document.getElementById('aiden-vol-min').textContent = '450 mL';
+        document.getElementById('aiden-vol-mid').textContent = '975 mL';
+        document.getElementById('aiden-vol-max').textContent = '1,500 mL';
+        doseInline.className = 'font-mono-num text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#1e5ed6] text-white';
+      }
+
+      document.getElementById('aiden-vol-readout').textContent = `${r.activeVol.toLocaleString()} mL`;
+      doseInline.textContent = `${r.doseG} g beans`;
+      document.getElementById('aiden-cups-readout').textContent = `(~${(r.activeVol / 29.5735).toFixed(1)} oz)`;
+      document.getElementById('aiden-cap-warning').classList.toggle('hidden', !r.capWarning);
+
+      // Ode Gen 2 Stepped Clicks Display
+      document.getElementById('ode-grind-value').textContent = r.odeParts.shortLabel;
+      document.getElementById('ode-grind-sub').textContent = r.odeParts.subLabel;
+      const pct = clamp((r.odeIdx / 30) * 100, 2, 98);
+      document.getElementById('ode-dial-fill').style.width = `${pct}%`;
+      document.getElementById('ode-dial-marker').style.left = `${pct}%`;
+
+      const odeDelta = document.getElementById('ode-grind-delta');
+      if (r.offsets.odeSteps !== 0) {
+        odeDelta.classList.remove('hidden');
+        odeDelta.textContent = `${r.offsets.odeSteps > 0 ? '+' : ''}${r.offsets.odeSteps} clk`;
+      } else {
+        odeDelta.classList.add('hidden');
+      }
+
+      const textureZone = r.odeIdx <= 11 ? 'Medium-Fine' : (r.odeIdx <= 17 ? 'Medium' : (r.odeIdx <= 23 ? 'Medium-Coarse' : 'Coarse'));
+      document.getElementById('ode-grind-note').textContent = `Set dial to ${r.odeParts.fullLabel} (${textureZone}) for ${r.activeVol.toLocaleString()} mL ${state.dripMode === 'single' ? 'Green single-serve' : 'Blue batch'} (${r.doseG} g beans).`;
+
+      // Core Aiden Grid
+      const coreCards = [
+        { field: 'tempC', label: 'Brew Temp', value: formatTempFromC(r.brewTempC), sub: state.dripMode === 'batch' ? 'Blue batch target' : 'Green single target', delta: r.offsets.tempC ? `${r.offsets.tempC > 0 ? '+' : ''}${r.offsets.tempC}°C` : '' },
+        { field: 'ratio', label: 'Coffee : Water', value: `1 : ${r.ratio}`, sub: `${r.doseG} g : ${r.activeVol} mL`, delta: r.offsets.ratio ? `${r.offsets.ratio > 0 ? '+' : ''}${r.offsets.ratio.toFixed(1)}` : '' },
+        { field: 'bloomRatio', label: 'Bloom Ratio', value: `1 : ${r.bloomRatio}`, sub: `${r.bloomWaterMl} mL bloom water`, delta: r.offsets.bloomRatio ? `${r.offsets.bloomRatio > 0 ? '+' : ''}${r.offsets.bloomRatio.toFixed(1)}` : '' },
+        { field: 'bloomTime', label: 'Bloom Time', value: `${r.bloomTime} s`, sub: 'CO₂ degas window', delta: r.offsets.bloomTime ? `${r.offsets.bloomTime > 0 ? '+' : ''}${r.offsets.bloomTime}s` : '' },
+        { field: 'bloomTempC', label: 'Bloom Temp', value: formatTempFromC(r.bloomTempC), sub: 'Initial wetting temp', delta: r.offsets.bloomTempC ? `${r.offsets.bloomTempC > 0 ? '+' : ''}${r.offsets.bloomTempC}°C` : '' },
+        { field: null, label: 'Beans / Water', value: `${r.doseG} g`, sub: `${r.activeVol.toLocaleString()} mL water`, delta: '' }
+      ];
+
+      const coreGrid = document.getElementById('aiden-core-grid');
+      coreGrid.innerHTML = coreCards.map(c => `
+        <div class="rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-3.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <span class="fellow-label">${c.label}</span>
+              ${c.delta ? `<span class="delta-badge text-[10px] font-mono-num font-semibold px-1.5 py-0.2 rounded-full bg-[#141414] text-white">${c.delta}</span>` : ''}
+            </div>
+            <div class="flex items-center justify-between gap-1 mt-1">
+              <div class="font-mono-num text-base sm:text-lg font-bold text-[#141414]">${c.value}</div>
+              ${c.field ? `
+                <div class="flex items-center gap-1">
+                  <button type="button" data-drip-field="${c.field}" data-dir="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]" aria-label="Decrease ${c.label}">−</button>
+                  <button type="button" data-drip-field="${c.field}" data-dir="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]" aria-label="Increase ${c.label}">+</button>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+          <div class="text-[11px] text-[#6e6c67] mt-1.5">${c.sub}</div>
+        </div>
+      `).join('');
+
+      coreGrid.querySelectorAll('button[data-drip-field]').forEach(btn => {
+        btn.addEventListener('click', () => adjustDripField(btn.dataset.dripField, Number(btn.dataset.dir)));
+      });
+
+      // Pour Timeline
+      const activeCfg = state.dripMode === 'single' ? r.single : r.batch;
+      const remainingMl = Math.max(0, r.activeVol - r.bloomWaterMl);
+      const perPulseMl = Math.round(remainingMl / activeCfg.pulses);
+      const mins = Math.floor(r.estSeconds / 60);
+      const secs = String(r.estSeconds % 60).padStart(2, '0');
+      document.getElementById('timeline-title').textContent = `Pour Sequence (${state.dripMode === 'single' ? 'Green Single' : 'Blue Batch'})`;
+      document.getElementById('timeline-total').textContent = `Est. ~${mins}:${secs}`;
+
+      const pulseColorA = state.dripMode === 'single' ? 'bg-[#167956] text-white' : 'bg-[#1e5ed6] text-white';
+      const pulseColorB = state.dripMode === 'single' ? 'bg-[#1f966c] text-white' : 'bg-[#3b77e8] text-white';
+      const segments = [{ label: 'Bloom', ml: r.bloomWaterMl, temp: formatTempFromC(r.bloomTempC), bg: 'bg-[#141414] text-white' }];
+      activeCfg.tempsC.forEach((t, idx) => {
+        segments.push({ label: `P${idx + 1}`, ml: perPulseMl, temp: formatTempFromC(t), bg: idx % 2 === 0 ? pulseColorA : pulseColorB });
+      });
+
+      document.getElementById('aiden-timeline-bars').innerHTML = segments.map(seg => {
+        const wPct = Math.max(15, Math.round((seg.ml / r.activeVol) * 100));
+        return `<div class="${seg.bg} rounded-xl flex flex-col items-center justify-center px-1.5 overflow-hidden transition-all" style="width:${wPct}%">
+          <span class="text-[10.5px] font-bold leading-none">${seg.label}</span>
+          <span class="text-[9.5px] font-mono-num opacity-90 leading-tight">${seg.ml}mL</span>
+        </div>`;
+      }).join('');
+
+      document.getElementById('aiden-timeline-legend').innerHTML = segments.map((seg, i) => `
+        <span><strong class="text-[#141414]">${seg.label}:</strong> ${seg.ml}mL @ ${seg.temp}${i === 0 ? ` (${r.bloomTime}s)` : (i < segments.length - 1 ? ` → ${activeCfg.pause}s` : '')}</span>
+      `).join('');
+
+      // Green & Blue Pulse Cards
+      const singleCard = document.getElementById('card-single-pulses');
+      const batchCard = document.getElementById('card-batch-pulses');
+      const singleBadge = document.getElementById('badge-single-active');
+      const batchBadge = document.getElementById('badge-batch-active');
+
+      document.getElementById('single-pulse-dose-summary').textContent = `Green: ${r.singleVol} mL water • ${r.singleDoseG} g beans`;
+      document.getElementById('batch-pulse-dose-summary').textContent = `Blue: ${r.batchVol.toLocaleString()} mL water • ${r.batchDoseG} g beans`;
+
+      if (state.dripMode === 'single') {
+        singleCard.className = 'rounded-2xl border-2 border-[#167956] bg-[#167956]/[0.03] p-4 transition';
+        batchCard.className = 'rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-4 transition';
+        singleBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#167956] text-white';
+        singleBadge.textContent = 'ACTIVE';
+        batchBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1e5ed6]/10 text-[#1e5ed6]';
+        batchBadge.textContent = '450–1,500 mL';
+      } else {
+        batchCard.className = 'rounded-2xl border-2 border-[#1e5ed6] bg-[#1e5ed6]/[0.03] p-4 transition';
+        singleCard.className = 'rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-4 transition';
+        batchBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1e5ed6] text-white';
+        batchBadge.textContent = 'ACTIVE';
+        singleBadge.className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#167956]/10 text-[#167956]';
+        singleBadge.textContent = '150–450 mL';
+      }
+
+      const renderPulseRows = (prefix, cfg) => `
+        <div class="flex items-center justify-between py-1.5 border-b border-[#e6e4de]">
+          <span class="text-[#6e6c67]">Pulses</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-pulse-field="${prefix}Pulses" data-dir="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+            <span class="font-mono-num font-bold text-[#141414] min-w-[20px] text-center">${cfg.pulses}</span>
+            <button type="button" data-pulse-field="${prefix}Pulses" data-dir="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+          </div>
+        </div>
+        <div class="flex items-center justify-between py-1.5 border-b border-[#e6e4de]">
+          <span class="text-[#6e6c67]">Time Between</span>
+          <div class="flex items-center gap-1.5">
+            <button type="button" data-pulse-field="${prefix}Pause" data-dir="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+            <span class="font-mono-num font-bold text-[#141414] min-w-[38px] text-center">${cfg.pulses > 1 ? cfg.pause + ' s' : 'N/A'}</span>
+            <button type="button" data-pulse-field="${prefix}Pause" data-dir="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+          </div>
+        </div>
+        <div class="pt-1.5 space-y-1.5">
+          ${cfg.tempsC.map((t, i) => `
+            <div class="flex items-center justify-between">
+              <span class="text-[#6e6c67]">Pulse ${i + 1} Temp</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" data-pulse-field="${prefix}PulseTemp" data-idx="${i}" data-dir="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+                <span class="font-mono-num font-semibold text-[#141414] min-w-[44px] text-center">${formatTempFromC(t)}</span>
+                <button type="button" data-pulse-field="${prefix}PulseTemp" data-idx="${i}" data-dir="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+
+      const singleBody = document.getElementById('aiden-single-pulses-body');
+      const batchBody = document.getElementById('aiden-batch-pulses-body');
+      singleBody.innerHTML = renderPulseRows('single', r.single);
+      batchBody.innerHTML = renderPulseRows('batch', r.batch);
+
+      [singleBody, batchBody].forEach(container => {
+        container.querySelectorAll('button[data-pulse-field]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            adjustDripField(btn.dataset.pulseField, Number(btn.dataset.dir), btn.dataset.idx !== undefined ? Number(btn.dataset.idx) : 0);
+          });
+        });
+      });
+    }
+
+    function renderDrinkCupSvg(drink, yieldG) {
+      const layers = [];
+      if (drink.id === 'iced_espresso') {
+        layers.push({ h: 36, fill: '#d6eaf8', label: 'Ice + Cold' });
+        layers.push({ h: 30, fill: '#2c1810', label: `Shot ${yieldG}g` });
+      } else if (drink.id === 'americano') {
+        layers.push({ h: 12, fill: '#b36a35', label: 'Crema' });
+        layers.push({ h: 24, fill: '#2c1810', label: `Shot ${yieldG}g` });
+        layers.push({ h: 48, fill: '#eef4f8', label: `Water ${drink.waterMl}mL` });
+      } else if (drink.isMilk) {
+        const foamH = drink.foamMm >= 12 ? 26 : (drink.foamMm >= 7 ? 16 : 10);
+        const milkH = drink.milkMl >= 180 ? 46 : (drink.milkMl >= 100 ? 36 : 26);
+        layers.push({ h: foamH, fill: '#f7f3eb', label: `Foam ~${drink.foamMm}mm` });
+        layers.push({ h: milkH, fill: '#ece3d3', label: `Milk ${drink.milkMl}mL` });
+        layers.push({ h: 24, fill: '#2c1810', label: `Shot ${yieldG}g` });
+      } else {
+        layers.push({ h: 14, fill: '#b36a35', label: 'Crema' });
+        layers.push({ h: 38, fill: '#2c1810', label: `Shot ${yieldG}g` });
+      }
+
+      const totalH = layers.reduce((s, l) => s + l.h, 0);
+      let y = 132 - totalH;
+      const rects = layers.map(l => {
+        const curY = y;
+        y += l.h;
+        const textFill = (l.fill === '#2c1810' || l.fill === '#b36a35') ? '#ffffff' : '#141414';
+        return `
+          <rect x="26" y="${curY}" width="88" height="${l.h}" fill="${l.fill}" />
+          ${l.h >= 14 ? `<text x="70" y="${curY + l.h / 2 + 3.5}" text-anchor="middle" font-size="9" font-weight="600" fill="${textFill}" font-family="Inter, sans-serif">${l.label}</text>` : ''}
+        `;
+      }).join('');
+
+      return `
+        <svg viewBox="0 0 150 150" class="w-32 h-32" role="img" aria-label="${drink.name} cup diagram">
+          <defs>
+            <clipPath id="cupClip">
+              <path d="M 26 26 L 114 26 L 106 126 Q 105 134 96 134 L 44 134 Q 35 134 34 126 Z" />
+            </clipPath>
+          </defs>
+          <path d="M 26 26 L 114 26 L 106 126 Q 105 134 96 134 L 44 134 Q 35 134 34 126 Z" fill="#faf9f7" stroke="#d9d6ce" stroke-width="2" />
+          <g clip-path="url(#cupClip)">${rects}</g>
+          <path d="M 26 26 L 114 26 L 106 126 Q 105 134 96 134 L 44 134 Q 35 134 34 126 Z" fill="none" stroke="#141414" stroke-width="2.2" />
+          ${drink.cupType !== 'iced' && drink.cupType !== 'gibraltar' ? `<path d="M 112 48 C 132 48, 132 94, 108 94" fill="none" stroke="#141414" stroke-width="2.6" stroke-linecap="round" />` : ''}
+        </svg>
+      `;
+    }
+
+    function renderEspressoPanel() {
+      const m = computeMerakiRecipe();
+      document.getElementById('espresso-bean-heading').textContent = state.bean.name.trim() || 'Custom Coffee Bean';
+
+      // Drink selector pills
+      const drinkEl = document.getElementById('drink-selector');
+      drinkEl.innerHTML = DRINK_TYPES.map(d => {
+        const active = d.id === state.drinkType;
+        return `<button type="button" data-drink="${d.id}" class="text-left p-3 rounded-2xl border transition ${
+          active
+            ? 'bg-[#141414] text-white border-[#141414]'
+            : 'bg-[#faf9f7] text-[#141414] border-[#e6e4de] hover:border-[#141414]'
+        }">
+          <div class="text-xs font-semibold leading-tight">${d.name}</div>
+          <div class="text-[10px] ${active ? 'text-stone-300' : 'text-[#6e6c67]'} mt-0.5">${d.subtitle}</div>
+        </button>`;
+      }).join('');
+
+      drinkEl.querySelectorAll('button[data-drink]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.drinkType = btn.dataset.drink;
+          state.offsets.espresso.steamLevelOverride = null;
+          state.offsets.espresso.milkTempFDelta = 0;
+          renderAll();
+        });
+      });
+
+      // Meraki Grind Dial
+      document.getElementById('meraki-grind-value').textContent = m.grindDial;
+      const pct = clamp(((m.grindDial - 1) / 44) * 100, 2, 98);
+      document.getElementById('meraki-dial-fill').style.width = `${pct}%`;
+      document.getElementById('meraki-dial-marker').style.left = `${pct}%`;
+
+      const deltaEl = document.getElementById('meraki-grind-delta');
+      if (m.offsets.grindSteps !== 0) {
+        deltaEl.classList.remove('hidden');
+        deltaEl.textContent = `${m.offsets.grindSteps > 0 ? '+' : ''}${m.offsets.grindSteps}`;
+      } else {
+        deltaEl.classList.add('hidden');
+      }
+      document.getElementById('meraki-grind-note').textContent = `Starting grind dial ${m.grindDial} for ${m.drink.name}. Step 1–2 clicks finer after week 2 in Airscape.`;
+
+      // Strictly Adjustable Core Settings: Grind Weight, Brew Weight, Brew Temp, Group Head Temp (5 exact values)
+      const coreEl = document.getElementById('meraki-core-grid');
+      coreEl.innerHTML = `
+        <!-- Grind Weight -->
+        <div class="rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-3.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="fellow-label">Grind Weight (Dose)</span>
+            ${m.offsets.dose ? `<span class="delta-badge text-[10px] font-mono-num font-semibold px-1.5 py-0.2 rounded-full bg-[#141414] text-white">${m.offsets.dose > 0 ? '+' : ''}${m.offsets.dose.toFixed(1)}g</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-1">
+            <span class="font-mono-num text-xl font-bold text-[#141414]">${m.grindWeightG} g</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-meraki-act="dose" data-val="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+              <button type="button" data-meraki-act="dose" data-val="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+            </div>
+          </div>
+          <p class="text-[11px] text-[#6e6c67] mt-1">Grind Size: Dial ${m.grindDial} (adjusted above)</p>
+        </div>
+
+        <!-- Brew Weight -->
+        <div class="rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-3.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="fellow-label">Brew Weight (Yield)</span>
+            ${m.offsets.brewWeightDelta ? `<span class="delta-badge text-[10px] font-mono-num font-semibold px-1.5 py-0.2 rounded-full bg-[#141414] text-white">${m.offsets.brewWeightDelta > 0 ? '+' : ''}${m.offsets.brewWeightDelta}g</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-1">
+            <span class="font-mono-num text-xl font-bold text-[#141414]">${m.brewWeightG} g</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-meraki-act="brewWeight" data-val="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+              <button type="button" data-meraki-act="brewWeight" data-val="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+            </div>
+          </div>
+          <p class="text-[11px] text-[#6e6c67] mt-1">Ratio 1 : ${m.effectiveRatio} • Auto-stop scale</p>
+        </div>
+
+        <!-- Brew Temperature -->
+        <div class="rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-3.5">
+          <div class="flex items-center justify-between mb-1">
+            <span class="fellow-label">Brew Temperature</span>
+            ${m.offsets.brewTempC ? `<span class="delta-badge text-[10px] font-mono-num font-semibold px-1.5 py-0.2 rounded-full bg-[#141414] text-white">${m.offsets.brewTempC > 0 ? '+' : ''}${m.offsets.brewTempC}°C</span>` : ''}
+          </div>
+          <div class="flex items-center justify-between mt-1">
+            <span class="font-mono-num text-xl font-bold text-[#141414]">${formatTempFromC(m.brewTempC)}</span>
+            <div class="flex items-center gap-1.5">
+              <button type="button" data-meraki-act="brewTempC" data-val="-1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+              <button type="button" data-meraki-act="brewTempC" data-val="1" class="stepper-btn bg-white hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+            </div>
+          </div>
+          <p class="text-[11px] text-[#6e6c67] mt-1">Brew Boiler PID target</p>
+        </div>
+
+        <!-- Group Head Temperature (5 exact discrete steps: 86, 104, 122, 140, 158°F) -->
+        <div class="rounded-2xl border border-[#e6e4de] bg-[#faf9f7] p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="fellow-label">Group Head Temp</span>
+            <span class="font-mono-num text-xs font-bold text-[#141414]">${formatTempFromF(m.groupTempF)}</span>
+          </div>
+          <div class="grid grid-cols-5 gap-1">
+            ${MERAKI_GROUP_TEMPS_F.map((tf, idx) => `
+              <button type="button" data-meraki-act="groupTempIdx" data-val="${idx}" class="py-1.5 rounded-xl font-mono-num text-[11px] font-semibold border transition ${
+                m.groupTempIdx === idx
+                  ? 'bg-[#141414] text-white border-[#141414]'
+                  : 'bg-white text-[#6e6c67] border-[#e6e4de] hover:border-[#141414]'
+              }">${formatTempFromF(tf).replace('°F', '°').replace('°C', '°')}</button>
+            `).join('')}
+          </div>
+          <p class="text-[11px] text-[#6e6c67] mt-1.5">5 Meraki presets (${state.unit === 'F' ? '86–158°F' : '30–70°C'})</p>
+        </div>
+      `;
+
+      coreEl.querySelectorAll('button[data-meraki-act]').forEach(btn => {
+        btn.addEventListener('click', () => adjustMerakiField(btn.dataset.merakiAct, Number(btn.dataset.val)));
+      });
+
+      // Pre-Infusion Card (ON/OFF, 3 or 4 bar, 5-15s)
+      const piCard = document.getElementById('meraki-preinfusion-card');
+      piCard.innerHTML = `
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <span class="fellow-label">Pre-Infusion</span>
+            <p class="text-xs text-[#6e6c67] mt-0.5">${m.preInfusionOn ? `${m.preInfusionBar} bar for ${m.preInfusionTime} seconds` : 'Disabled — straight to full extraction'}</p>
+          </div>
+          <div class="inline-flex bg-[#ebe9e3] p-1 rounded-full">
+            <button type="button" data-pi-on="false" class="px-3.5 py-1 rounded-full text-xs font-semibold transition ${!m.preInfusionOn ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">OFF</button>
+            <button type="button" data-pi-on="true" class="px-3.5 py-1 rounded-full text-xs font-semibold transition ${m.preInfusionOn ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">ON</button>
+          </div>
+        </div>
+        ${m.preInfusionOn ? `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-[#e6e4de]">
+            <div class="flex items-center justify-between bg-white rounded-xl border border-[#e6e4de] px-3.5 py-2.5">
+              <span class="text-xs font-medium text-[#6e6c67]">Pressure</span>
+              <div class="inline-flex bg-[#f2f0eb] p-0.5 rounded-full">
+                <button type="button" data-pi-bar="3" class="px-3 py-1 rounded-full font-mono-num text-xs font-semibold transition ${m.preInfusionBar === 3 ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">3 bar</button>
+                <button type="button" data-pi-bar="4" class="px-3 py-1 rounded-full font-mono-num text-xs font-semibold transition ${m.preInfusionBar === 4 ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">4 bar</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between bg-white rounded-xl border border-[#e6e4de] px-3.5 py-2.5">
+              <span class="text-xs font-medium text-[#6e6c67]">Infusion Time (5–15s)</span>
+              <div class="flex items-center gap-2">
+                <button type="button" data-pi-time="-1" class="stepper-btn bg-[#f7f6f3] hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+                <span class="font-mono-num text-sm font-bold text-[#141414] min-w-[34px] text-center">${m.preInfusionTime} s</span>
+                <button type="button" data-pi-time="1" class="stepper-btn bg-[#f7f6f3] hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+              </div>
+            </div>
+          </div>
+        ` : ''}
+      `;
+
+      piCard.querySelectorAll('button[data-pi-on]').forEach(btn => {
+        btn.addEventListener('click', () => adjustMerakiField('preInfusionOn', btn.dataset.piOn === 'true'));
+      });
+      piCard.querySelectorAll('button[data-pi-bar]').forEach(btn => {
+        btn.addEventListener('click', () => adjustMerakiField('preInfusionBar', Number(btn.dataset.piBar)));
+      });
+      piCard.querySelectorAll('button[data-pi-time]').forEach(btn => {
+        btn.addEventListener('click', () => adjustMerakiField('preInfusionTime', Number(btn.dataset.piTime)));
+      });
+
+      // Milk Steam Section (ONLY shown when applicable to drink)
+      const milkSec = document.getElementById('meraki-milk-section');
+      if (m.isMilk) {
+        milkSec.classList.remove('hidden');
+        milkSec.innerHTML = `
+          <div class="flex items-center justify-between mb-2.5">
+            <span class="fellow-label">Milk Steam Settings • ${m.drink.name}</span>
+            <span class="text-[11px] font-mono-num text-[#6e6c67]">${m.drink.milkMl} mL milk</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mb-3">
+            ${MILK_TYPES.map(mt => `
+              <button type="button" data-milk-type="${mt.id}" class="px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                state.milkType === mt.id
+                  ? 'bg-[#141414] text-white border-[#141414]'
+                  : 'bg-white text-[#141414] border-[#e6e4de] hover:border-[#141414]'
+              }">${mt.short}</button>
+            `).join('')}
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex items-center justify-between bg-white rounded-xl border border-[#e6e4de] px-3.5 py-2.5">
+              <span class="text-xs font-medium text-[#6e6c67]">Steam Level</span>
+              <div class="inline-flex bg-[#f2f0eb] p-0.5 rounded-full">
+                <button type="button" data-steam-lvl="medium" class="px-3 py-1 rounded-full text-xs font-semibold transition ${m.steamLevel === 'medium' ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">Medium</button>
+                <button type="button" data-steam-lvl="strong" class="px-3 py-1 rounded-full text-xs font-semibold transition ${m.steamLevel === 'strong' ? 'bg-[#141414] text-white' : 'text-[#6e6c67]'}">Strong</button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between bg-white rounded-xl border border-[#e6e4de] px-3.5 py-2.5">
+              <span class="text-xs font-medium text-[#6e6c67]">Milk Steam Temp</span>
+              <div class="flex items-center gap-2">
+                <button type="button" data-milk-temp="-1" class="stepper-btn bg-[#f7f6f3] hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">−</button>
+                <span class="font-mono-num text-sm font-bold text-[#141414] min-w-[44px] text-center">${formatTempFromF(m.milkTempF)}</span>
+                <button type="button" data-milk-temp="1" class="stepper-btn bg-[#f7f6f3] hover:bg-[#ebe9e3] border border-[#d9d6ce] text-[#141414]">+</button>
+              </div>
+            </div>
+          </div>
+          <p class="mt-2.5 text-[11px] text-[#57534e] bg-white border border-[#e6e4de] rounded-xl px-3 py-2 leading-relaxed">
+            <strong class="text-[#141414]">${m.milk.name}:</strong> ${m.milk.tip}
+          </p>
+        `;
+        milkSec.querySelectorAll('button[data-milk-type]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            state.milkType = btn.dataset.milkType;
+            state.offsets.espresso.steamLevelOverride = null;
+            state.offsets.espresso.milkTempFDelta = 0;
+            renderAll();
+          });
+        });
+        milkSec.querySelectorAll('button[data-steam-lvl]').forEach(btn => {
+          btn.addEventListener('click', () => adjustMerakiField('steamLevel', btn.dataset.steamLvl));
+        });
+        milkSec.querySelectorAll('button[data-milk-temp]').forEach(btn => {
+          btn.addEventListener('click', () => adjustMerakiField('milkTempF', Number(btn.dataset.milkTemp)));
+        });
+      } else {
+        milkSec.classList.add('hidden');
+        milkSec.innerHTML = '';
+      }
+
+      // Drink Assembly & Cup SVG
+      document.getElementById('drink-build-title').textContent = `Drink Assembly — ${m.drink.name}`;
+      document.getElementById('drink-cup-svg').innerHTML = renderDrinkCupSvg(m.drink, m.brewWeightG);
+
+      const specs = [];
+      if (m.isMilk) {
+        specs.push(`<span class="px-2.5 py-1 rounded-full bg-[#f2f0eb] text-[#141414] font-medium">${m.milk.short}: ${m.drink.milkMl} mL</span>`);
+        specs.push(`<span class="px-2.5 py-1 rounded-full bg-[#f2f0eb] text-[#141414] font-medium">Steam: ${m.steamLevel === 'strong' ? 'Strong' : 'Medium'} • ${formatTempFromF(m.milkTempF)}</span>`);
+      }
+      if (m.drink.waterMl > 0) {
+        specs.push(`<span class="px-2.5 py-1 rounded-full bg-[#f2f0eb] text-[#141414] font-medium">${m.drink.iceG > 0 ? 'Cold Water' : 'Hot Water'}: ${m.drink.waterMl} mL</span>`);
+      }
+      if (m.drink.iceG > 0) {
+        specs.push(`<span class="px-2.5 py-1 rounded-full bg-[#f2f0eb] text-[#141414] font-medium">Ice: ${m.drink.iceG} g</span>`);
+      }
+      if (specs.length === 0) {
+        specs.push(`<span class="px-2.5 py-1 rounded-full bg-[#f2f0eb] text-[#141414] font-medium">Double Shot: ${m.brewWeightG} g</span>`);
+      }
+
+      document.getElementById('drink-build-details').innerHTML = `
+        <div class="flex flex-wrap gap-1.5 text-xs">${specs.join('')}</div>
+        <ol class="space-y-1.5 text-xs text-[#57534e] list-decimal list-inside pt-1">
+          ${m.drink.buildSteps.map(step => `<li class="leading-relaxed">${step}</li>`).join('')}
+        </ol>
+      `;
+    }
+
+    function renderSavedView() {
+      const listEl = document.getElementById('saved-list');
+      document.getElementById('saved-count-badge').textContent = state.savedRecipes.length;
+      document.getElementById('mob-saved-count').textContent = state.savedRecipes.length;
+
+      if (state.savedRecipes.length === 0) {
+        listEl.innerHTML = `
+          <div class="fellow-card p-8 text-center">
+            <p class="text-sm font-semibold text-[#141414] mb-1">No saved recipes yet</p>
+            <p class="text-xs text-[#6e6c67]">Dial in a bean on your Fellow Aiden or Meraki Gen 2 and tap <strong>Save to Journal</strong>.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = state.savedRecipes.map(item => `
+        <div class="fellow-card p-4 flex flex-wrap items-start justify-between gap-3">
+          <div class="space-y-1 flex-1 min-w-[220px]">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="text-sm font-semibold text-[#141414]">${escapeHtml(item.bean.name)}</span>
+              <span class="text-[10px] font-semibold uppercase px-2.5 py-0.5 rounded-full ${
+                item.mode === 'drip'
+                  ? (item.dripMode === 'single' ? 'bg-[#167956]/10 text-[#167956]' : 'bg-[#1e5ed6]/10 text-[#1e5ed6]')
+                  : 'bg-[#141414] text-white'
+              }">
+                ${item.mode === 'drip' ? (item.dripMode === 'single' ? 'Aiden Green' : 'Aiden Blue') : `Meraki • ${item.drinkName}`}
+              </span>
+              <span class="text-[#b36a35] text-xs">${'★'.repeat(item.rating)}${'☆'.repeat(5 - item.rating)}</span>
+            </div>
+            <p class="text-xs font-mono-num text-[#57534e]">${escapeHtml(item.summaryLine)}</p>
+            ${item.note ? `<p class="text-xs text-[#6e6c67] italic">"${escapeHtml(item.note)}"</p>` : ''}
+            <p class="text-[10px] text-[#9c9992]">Saved ${item.savedAt}</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" data-load-id="${item.id}" class="px-3.5 py-1.5 rounded-full bg-[#141414] hover:bg-stone-800 text-white text-xs font-semibold transition">Load</button>
+            <button type="button" data-delete-id="${item.id}" class="px-3 py-1.5 rounded-full bg-[#f2f0eb] hover:bg-red-50 hover:text-red-700 text-[#6e6c67] text-xs font-medium transition">Delete</button>
+          </div>
+        </div>
+      `).join('');
+
+      listEl.querySelectorAll('button[data-load-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const item = state.savedRecipes.find(x => x.id === btn.dataset.loadId);
+          if (!item) return;
+          state.bean = { ...item.bean };
+          state.activeTab = item.mode;
+          if (item.mode === 'drip') {
+            state.dripMode = item.dripMode;
+            state.singleVol = item.singleVol || 300;
+            state.batchVol = item.batchVol || 900;
+            state.offsets.drip = { ...freshDripOffsets(), ...item.offsets };
+          } else {
+            state.drinkType = item.drinkType || 'espresso';
+            state.milkType = item.milkType || 'kirkland_2uf';
+            state.offsets.espresso = { ...freshEspressoOffsets(), ...item.offsets };
+          }
+          state.selectedSymptoms.clear();
+          syncBeanInputs();
+          renderAll();
+          showToast(`Loaded "${item.bean.name}"`);
+        });
+      });
+
+      listEl.querySelectorAll('button[data-delete-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.savedRecipes = state.savedRecipes.filter(x => x.id !== btn.dataset.deleteId);
+          persistSavedRecipes();
+          renderSavedView();
+          showToast('Recipe removed');
+        });
+      });
+    }
+
+    function renderNavigation() {
+      const tabs = [
+        { desk: 'nav-drip', mob: 'mob-nav-drip', key: 'drip' },
+        { desk: 'nav-espresso', mob: 'mob-nav-espresso', key: 'espresso' },
+        { desk: 'nav-saved', mob: 'mob-nav-saved', key: 'saved' }
+      ];
+      tabs.forEach(t => {
+        const dEl = document.getElementById(t.desk);
+        const mEl = document.getElementById(t.mob);
+        const active = state.activeTab === t.key;
+        dEl.className = active
+          ? 'px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5 bg-[#141414] text-white shadow-xs'
+          : 'px-4 py-1.5 text-xs font-semibold rounded-full transition-all flex items-center gap-1.5 text-[#6e6c67] hover:text-[#141414]';
+        mEl.className = active
+          ? 'flex flex-col items-center justify-center py-1 rounded-xl text-[11px] font-semibold text-[#141414]'
+          : 'flex flex-col items-center justify-center py-1 rounded-xl text-[11px] font-medium text-[#8a8780]';
+      });
+
+      document.getElementById('workspace-view').classList.toggle('hidden', state.activeTab === 'saved');
+      document.getElementById('saved-view').classList.toggle('hidden', state.activeTab !== 'saved');
+      document.getElementById('panel-drip').classList.toggle('hidden', state.activeTab !== 'drip');
+      document.getElementById('panel-espresso').classList.toggle('hidden', state.activeTab !== 'espresso');
+      document.getElementById('btn-unit-toggle').textContent = `°${state.unit}`;
+      const hasKey = Boolean((state.ai.apiKey || '').trim());
+      document.getElementById('ai-status-dot').className = hasKey ? 'w-2 h-2 rounded-full bg-[#167956]' : 'w-2 h-2 rounded-full bg-[#b8b5ad]';
+      document.getElementById('ai-status-text').textContent = hasKey ? 'Gemini On' : 'Gemini AI';
+    }
+
+    function renderAll() {
+      renderNavigation();
+      renderPresets();
+      renderRoastSelector();
+      renderTasteCoach();
+      renderDripPanel();
+      renderEspressoPanel();
+      renderSavedView();
+      if (window.lucide) window.lucide.createIcons();
+    }
+
+    // =========================================================================
+    // 8. HELPERS, MODAL & TOAST
+    // =========================================================================
+    function escapeHtml(str) {
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function resetAllOffsets() {
+      state.selectedSymptoms.clear();
+      state.offsets.drip = freshDripOffsets();
+      state.offsets.espresso = freshEspressoOffsets();
+    }
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => showToast('Recipe copied')).catch(() => fallbackCopy(text));
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        showToast('Recipe copied');
+      } catch (e) {
+        showToast('Unable to copy automatically');
+      }
+      document.body.removeChild(ta);
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const div = document.createElement('div');
+      div.className = 'toast-enter bg-[#141414] text-white shadow-lg rounded-full px-4 py-2 text-xs font-medium mb-2';
+      div.textContent = msg;
+      container.appendChild(div);
+      setTimeout(() => div.remove(), 2200);
+    }
+
+    function openSaveModal() {
+      state.modalRating = 5;
+      document.getElementById('input-tasting-note').value = '';
+      const name = state.bean.name.trim() || 'Custom Bean';
+      if (state.activeTab === 'drip') {
+        const r = computeAidenRecipe();
+        document.getElementById('save-modal-summary').textContent = `${name} • Ode ${r.odeParts.fullLabel} • Aiden ${state.dripMode === 'single' ? 'Green' : 'Blue'} (${r.doseG}g : ${r.activeVol}mL, ${formatTempFromC(r.brewTempC)})`;
+      } else {
+        const m = computeMerakiRecipe();
+        document.getElementById('save-modal-summary').textContent = `${name} • Meraki (${m.drink.name}) — Dial ${m.grindDial}, ${m.grindWeightG}g → ${m.brewWeightG}g, Brew ${formatTempFromC(m.brewTempC)}, Group ${formatTempFromF(m.groupTempF)}`;
+      }
+      renderModalStars();
+      document.getElementById('save-modal').classList.remove('hidden');
+    }
+
+    function renderModalStars() {
+      const el = document.getElementById('modal-star-rating');
+      el.innerHTML = [1, 2, 3, 4, 5].map(n => `
+        <button type="button" data-star="${n}" class="text-2xl leading-none transition ${n <= state.modalRating ? 'text-[#b36a35]' : 'text-[#d9d6ce] hover:text-[#b36a35]'}">★</button>
+      `).join('');
+      el.querySelectorAll('button[data-star]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.modalRating = Number(btn.dataset.star);
+          renderModalStars();
+        });
+      });
+    }
+
+    // =========================================================================
+    // 9. EVENT LISTENERS & INITIALIZATION
+    // =========================================================================
+    function switchTab(tab) {
+      state.activeTab = tab;
+      state.selectedSymptoms.clear();
+      state.ai.customPlan = null;
+      renderAll();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function bindEvents() {
+      document.getElementById('nav-drip').addEventListener('click', () => switchTab('drip'));
+      document.getElementById('nav-espresso').addEventListener('click', () => switchTab('espresso'));
+      document.getElementById('nav-saved').addEventListener('click', () => switchTab('saved'));
+      document.getElementById('mob-nav-drip').addEventListener('click', () => switchTab('drip'));
+      document.getElementById('mob-nav-espresso').addEventListener('click', () => switchTab('espresso'));
+      document.getElementById('mob-nav-saved').addEventListener('click', () => switchTab('saved'));
+      document.getElementById('btn-back-to-dial').addEventListener('click', () => switchTab('drip'));
+
+      document.getElementById('btn-unit-toggle').addEventListener('click', () => {
+        state.unit = state.unit === 'F' ? 'C' : 'F';
+        renderAll();
+      });
+
+      // Gemini AI Settings Modal
+      document.getElementById('btn-ai-settings').addEventListener('click', () => {
+        document.getElementById('input-gemini-key').value = state.ai.apiKey || '';
+        document.getElementById('select-gemini-model').value = state.ai.model || 'gemini-2.5-flash';
+        document.getElementById('ai-modal').classList.remove('hidden');
+      });
+      const closeAiModal = () => document.getElementById('ai-modal').classList.add('hidden');
+      document.getElementById('btn-close-ai-modal').addEventListener('click', closeAiModal);
+      document.getElementById('btn-cancel-ai-modal').addEventListener('click', closeAiModal);
+      document.getElementById('btn-save-ai-key').addEventListener('click', () => {
+        state.ai.apiKey = document.getElementById('input-gemini-key').value.trim();
+        state.ai.model = document.getElementById('select-gemini-model').value;
+        persistAiSettings();
+        closeAiModal();
+        renderNavigation();
+        showToast(state.ai.apiKey ? 'Gemini AI Barista enabled' : 'Switched to offline engine');
+      });
+      document.getElementById('btn-clear-ai-key').addEventListener('click', () => {
+        state.ai.apiKey = '';
+        persistAiSettings();
+        closeAiModal();
+        renderNavigation();
+        showToast('Gemini key removed');
+      });
+
+      // Bag Photo & Text Detector (Live Gemini AI if key set, automatic local fallback)
+      const runBagParse = async () => {
+        const txt = document.getElementById('input-bag-parser').value.trim();
+        const statusEl = document.getElementById('bag-parser-status');
+        if (!txt) {
+          showToast('Paste or type bag details first');
+          return;
+        }
+        if ((state.ai.apiKey || '').trim()) {
+          statusEl.classList.remove('hidden');
+          statusEl.textContent = 'Asking Gemini AI Barista...';
+          try {
+            const res = await runGeminiBeanAnalysis({ text: txt });
+            statusEl.textContent = `Gemini Barista: ${res.baristaNote || 'Profile & settings populated.'}`;
+            showToast('Gemini Barista populated settings');
+            return;
+          } catch (err) {
+            showToast('Gemini error — used local detector');
+          }
+        }
+        const matched = parseBagText(txt);
+        statusEl.classList.remove('hidden');
+        statusEl.textContent = matched && matched.length
+          ? 'Detected: ' + matched.join(' • ')
+          : 'Updated bean name — verify Roast/Process/Origin below.';
+        showToast('Settings auto-populated');
+      };
+      document.getElementById('btn-parse-bag').addEventListener('click', runBagParse);
+      document.getElementById('input-bag-parser').addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runBagParse(); }
+      });
+
+      const photoInput = document.getElementById('input-bag-photo');
+      document.getElementById('btn-scan-photo').addEventListener('click', () => {
+        photoInput.value = '';
+        photoInput.click();
+      });
+      photoInput.addEventListener('change', async e => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const previewRow = document.getElementById('bag-photo-preview-row');
+        const thumb = document.getElementById('bag-photo-thumb');
+        const ocrLabel = document.getElementById('bag-ocr-label');
+        const ocrBar = document.getElementById('bag-ocr-bar');
+        const statusEl = document.getElementById('bag-parser-status');
+
+        const dataUrl = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = ev => resolve(ev.target.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        thumb.src = dataUrl;
+        previewRow.classList.remove('hidden');
+
+        // Use Gemini Vision first if API key is configured
+        if ((state.ai.apiKey || '').trim()) {
+          ocrLabel.textContent = 'Gemini Vision analyzing coffee bag...';
+          ocrBar.style.width = '45%';
+          try {
+            const base64 = String(dataUrl).split(',')[1] || '';
+            const mime = file.type || 'image/jpeg';
+            const res = await runGeminiBeanAnalysis({ text: document.getElementById('input-bag-parser').value.trim(), imageBase64: base64, imageMime: mime });
+            ocrBar.style.width = '100%';
+            ocrLabel.textContent = 'Gemini Vision read bag • Settings populated';
+            statusEl.classList.remove('hidden');
+            statusEl.textContent = `Gemini Barista: ${res.baristaNote || res.beanName}`;
+            showToast('Gemini Vision scanned bag');
+            return;
+          } catch (err) {
+            ocrLabel.textContent = 'Gemini Vision failed — falling back to local OCR...';
+          }
+        }
+
+        ocrLabel.textContent = 'Scanning coffee bag locally...';
+        ocrBar.style.width = '15%';
+        if (!window.Tesseract || !window.Tesseract.recognize) {
+          ocrLabel.textContent = 'OCR unavailable offline — type bag details above.';
+          ocrBar.style.width = '0%';
+          showToast('OCR unavailable offline');
+          return;
+        }
+        try {
+          const result = await window.Tesseract.recognize(file, 'eng', {
+            logger: m => {
+              if (m && m.status === 'recognizing text' && typeof m.progress === 'number') {
+                const pct = Math.max(15, Math.round(m.progress * 100));
+                ocrBar.style.width = pct + '%';
+                ocrLabel.textContent = `Reading bag label... ${pct}%`;
+              }
+            }
+          });
+          const rawOcr = (result && result.data && result.data.text ? result.data.text : '').replace(/\s+/g, ' ').trim();
+          ocrBar.style.width = '100%';
+          if (!rawOcr) {
+            ocrLabel.textContent = 'No readable text found — try a closer photo.';
+            showToast('No text detected');
+            return;
+          }
+          ocrLabel.textContent = 'Label scanned • Settings populated';
+          document.getElementById('input-bag-parser').value = rawOcr;
+          const matched = parseBagText(rawOcr);
+          statusEl.classList.remove('hidden');
+          statusEl.textContent = matched && matched.length
+            ? 'From photo — ' + matched.join(' • ')
+            : 'Text extracted — verify Roast/Process below.';
+          showToast('Bag scanned & settings populated');
+        } catch (err) {
+          ocrLabel.textContent = 'Scan failed — try another photo or paste text.';
+          ocrBar.style.width = '0%';
+          showToast('Photo scan failed');
+        }
+      });
+
+      // Free-form Ask Barista handler
+      const runAskBarista = async () => {
+        const input = document.getElementById('input-taste-freeform');
+        const txt = input.value.trim();
+        if (!txt) {
+          showToast('Describe what you tasted first');
+          return;
+        }
+        if ((state.ai.apiKey || '').trim()) {
+          const btn = document.getElementById('btn-ask-barista');
+          btn.disabled = true;
+          document.getElementById('calibration-output').innerHTML = '<p class="text-xs text-[#6e6c67]">Consulting Gemini AI Barista...</p>';
+          try {
+            await runGeminiTasteCoach(txt);
+            btn.disabled = false;
+            showToast('Gemini Barista plan ready');
+            return;
+          } catch (err) {
+            btn.disabled = false;
+            showToast('Gemini error — used local taste coach');
+          }
+        }
+        state.ai.customPlan = null;
+        mapFreeformTasteLocally(txt);
+        renderTasteCoach();
+        if (state.selectedSymptoms.size === 0) {
+          showToast('Add a Gemini key for custom notes, or tap a pill');
+        }
+      };
+      document.getElementById('btn-ask-barista').addEventListener('click', runAskBarista);
+      document.getElementById('input-taste-freeform').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); runAskBarista(); }
+      });
+
+      // Bean inputs
+      document.getElementById('input-bean-name').addEventListener('input', e => {
+        state.bean.name = e.target.value;
+        state.bean.presetId = null;
+        document.getElementById('drip-bean-heading').textContent = state.bean.name.trim() || 'Custom Coffee Bean';
+        document.getElementById('espresso-bean-heading').textContent = state.bean.name.trim() || 'Custom Coffee Bean';
+        renderPresets();
+      });
+      document.getElementById('select-process').addEventListener('change', e => { state.bean.process = e.target.value; state.bean.presetId = null; renderAll(); });
+      document.getElementById('select-origin').addEventListener('change', e => { state.bean.origin = e.target.value; state.bean.presetId = null; renderAll(); });
+      document.getElementById('select-freshness').addEventListener('change', e => { state.bean.freshness = e.target.value; state.bean.presetId = null; renderAll(); });
+
+      document.getElementById('btn-clear-bean').addEventListener('click', () => {
+        state.bean = { presetId: null, name: '', roast: 'medium', process: 'washed', origin: 'americas', freshness: 'peak' };
+        resetAllOffsets();
+        syncBeanInputs();
+        renderAll();
+        document.getElementById('input-bean-name').focus();
+      });
+
+      document.getElementById('btn-save-pantry').addEventListener('click', () => {
+        const cleanName = state.bean.name.trim();
+        if (!cleanName) {
+          showToast('Enter a Bean Name first');
+          document.getElementById('input-bean-name').focus();
+          return;
+        }
+        const newId = 'custom_' + Date.now();
+        state.customPresets.push({ id: newId, name: cleanName, roast: state.bean.roast, process: state.bean.process, origin: state.bean.origin, freshness: state.bean.freshness });
+        state.bean.presetId = newId;
+        persistCustomPresets();
+        renderPresets();
+        showToast(`Added "${cleanName}" to Pantry`);
+      });
+
+      // Drip controls
+      document.getElementById('btn-aiden-single').addEventListener('click', () => { state.dripMode = 'single'; renderDripPanel(); if (window.lucide) window.lucide.createIcons(); });
+      document.getElementById('btn-aiden-batch').addEventListener('click', () => { state.dripMode = 'batch'; renderDripPanel(); if (window.lucide) window.lucide.createIcons(); });
+      document.getElementById('slider-aiden-vol').addEventListener('input', e => {
+        const val = Number(e.target.value);
+        if (state.dripMode === 'single') state.singleVol = val;
+        else state.batchVol = val;
+        renderDripPanel();
+        if (window.lucide) window.lucide.createIcons();
+      });
+      document.getElementById('btn-ode-finer').addEventListener('click', () => adjustDripField('ode', -1));
+      document.getElementById('btn-ode-coarser').addEventListener('click', () => adjustDripField('ode', 1));
+      document.getElementById('btn-meraki-finer').addEventListener('click', () => adjustMerakiField('grind', -1));
+      document.getElementById('btn-meraki-coarser').addEventListener('click', () => adjustMerakiField('grind', 1));
+
+      // Taste calibration actions
+      document.getElementById('btn-apply-adjustments').addEventListener('click', () => {
+        const modeKey = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+        const aiPlan = state.ai.customPlan && state.ai.customPlan.mode === modeKey ? state.ai.customPlan : null;
+        const plan = aiPlan || buildCalibrationPlan();
+        if (!plan) return;
+        const key = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+        const target = state.offsets[key];
+        if (key === 'drip') {
+          target.odeSteps = clamp(target.odeSteps + plan.delta.odeSteps, -12, 12);
+          target.tempC = clamp(target.tempC + plan.delta.tempC, -10, 10);
+          target.ratio = Number(clamp(target.ratio + plan.delta.ratio, -3.5, 3.5).toFixed(1));
+          target.bloomTime = clamp(target.bloomTime + plan.delta.bloomTime, -20, 30);
+          target.singlePulses = clamp(target.singlePulses + plan.delta.singlePulses, -2, 2);
+          target.batchPulses = clamp(target.batchPulses + plan.delta.batchPulses, -1, 2);
+        } else {
+          target.grindSteps = clamp(target.grindSteps + plan.delta.grindSteps, -15, 15);
+          target.brewTempC = clamp(target.brewTempC + plan.delta.brewTempC, -6, 6);
+          target.brewWeightDelta = clamp(target.brewWeightDelta + plan.delta.brewWeightDelta, -18, 25);
+          target.preInfusionTimeDelta = clamp(target.preInfusionTimeDelta + plan.delta.preInfusionTimeDelta, -8, 10);
+          target.dose = Number(clamp(target.dose + plan.delta.dose, -3.0, 3.0).toFixed(1));
+          if (plan.delta.forcePreInfOn) target.preInfusionOnOverride = true;
+        }
+        target.count += 1;
+        state.selectedSymptoms.clear();
+        state.ai.customPlan = null;
+        document.getElementById('input-taste-freeform').value = '';
+        renderAll();
+        showToast(`Applied calibration #${target.count}`);
+      });
+
+      document.getElementById('btn-clear-symptoms').addEventListener('click', () => { state.selectedSymptoms.clear(); state.ai.customPlan = null; document.getElementById('input-taste-freeform').value = ''; renderTasteCoach(); });
+      document.getElementById('btn-reset-calibration').addEventListener('click', () => {
+        const key = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+        if (key === 'drip') state.offsets.drip = freshDripOffsets();
+        else state.offsets.espresso = freshEspressoOffsets();
+        state.selectedSymptoms.clear();
+        renderAll();
+        showToast('Reset to baseline');
+      });
+
+      // Copy buttons
+      document.getElementById('btn-copy-drip').addEventListener('click', () => {
+        const r = computeAidenRecipe();
+        const name = state.bean.name.trim() || 'Custom Bean';
+        const txt = [
+          `${name} — Fellow Ode Gen 2 + Aiden (${state.dripMode === 'single' ? 'Green Single' : 'Blue Batch'})`,
+          `Ode Gen 2 Grind: ${r.odeParts.fullLabel}`,
+          `Green Single Serve: ${r.singleVol} mL water / ${r.singleDoseG} g beans`,
+          `Blue Batch Brew: ${r.batchVol} mL water / ${r.batchDoseG} g beans`,
+          `Ratio: 1:${r.ratio} | Bloom: 1:${r.bloomRatio} (${r.bloomWaterMl} mL) | ${r.bloomTime}s @ ${formatTempFromC(r.bloomTempC)}`,
+          `Green Single Pulses: ${r.single.pulses} | Wait: ${r.single.pause}s | Temps: ${r.single.tempsC.map(formatTempFromC).join(', ')}`,
+          `Blue Batch Pulses: ${r.batch.pulses} | Wait: ${r.batch.pause}s | Temps: ${r.batch.tempsC.map(formatTempFromC).join(', ')}`
+        ].join('\n');
+        copyTextToClipboard(txt);
+      });
+
+      document.getElementById('btn-copy-espresso').addEventListener('click', () => {
+        const m = computeMerakiRecipe();
+        const name = state.bean.name.trim() || 'Custom Bean';
+        const lines = [
+          `${name} — Meraki Gen 2 (${m.drink.name})`,
+          `Grind Size: Dial ${m.grindDial} | Grind Weight: ${m.grindWeightG} g`,
+          `Brew Weight: ${m.brewWeightG} g (1:${m.effectiveRatio}) | Brew Temp: ${formatTempFromC(m.brewTempC)}`,
+          `Group Head Temp: ${formatTempFromF(m.groupTempF)}`,
+          `Pre-Infusion: ${m.preInfusionOn ? `ON (${m.preInfusionBar} bar, ${m.preInfusionTime}s)` : 'OFF'}`
+        ];
+        if (m.isMilk) {
+          lines.push(`Milk: ${m.milk.name} (${m.drink.milkMl} mL) | Steam: ${m.steamLevel === 'strong' ? 'Strong' : 'Medium'} | Temp: ${formatTempFromF(m.milkTempF)}`);
+        }
+        copyTextToClipboard(lines.join('\n'));
+      });
+
+      // Save Modal
+      document.getElementById('btn-open-save-drip').addEventListener('click', openSaveModal);
+      document.getElementById('btn-open-save-espresso').addEventListener('click', openSaveModal);
+      document.getElementById('btn-close-modal').addEventListener('click', () => document.getElementById('save-modal').classList.add('hidden'));
+      document.getElementById('btn-cancel-save').addEventListener('click', () => document.getElementById('save-modal').classList.add('hidden'));
+      document.getElementById('btn-confirm-save').addEventListener('click', () => {
+        const mode = state.activeTab === 'espresso' ? 'espresso' : 'drip';
+        const beanName = state.bean.name.trim() || 'Custom Coffee Bean';
+        let summaryLine = '';
+        let drinkName = '';
+        if (mode === 'drip') {
+          const r = computeAidenRecipe();
+          summaryLine = `Ode ${r.odeParts.fullLabel} • ${r.doseG}g : ${r.activeVol}mL (1:${r.ratio}) • ${formatTempFromC(r.brewTempC)}`;
+        } else {
+          const m = computeMerakiRecipe();
+          drinkName = m.drink.name;
+          summaryLine = `Dial ${m.grindDial} • ${m.grindWeightG}g → ${m.brewWeightG}g • Brew ${formatTempFromC(m.brewTempC)} • Group ${formatTempFromF(m.groupTempF)} • PI ${m.preInfusionOn ? m.preInfusionBar + 'bar/' + m.preInfusionTime + 's' : 'OFF'}`;
+        }
+        state.savedRecipes.unshift({
+          id: String(Date.now()),
+          mode,
+          dripMode: state.dripMode,
+          singleVol: state.singleVol,
+          batchVol: state.batchVol,
+          drinkType: state.drinkType,
+          milkType: state.milkType,
+          drinkName,
+          bean: { ...state.bean, name: beanName },
+          offsets: JSON.parse(JSON.stringify(state.offsets[mode])),
+          rating: state.modalRating,
+          note: document.getElementById('input-tasting-note').value.trim(),
+          summaryLine,
+          savedAt: new Date().toLocaleDateString()
+        });
+        persistSavedRecipes();
+        document.getElementById('save-modal').classList.add('hidden');
+        renderSavedView();
+        showToast('Saved to Journal');
+      });
+    }
+
+    loadStorage();
+    syncBeanInputs();
+    bindEvents();
+    renderAll();
+  </script>
+</body>
+</html>
